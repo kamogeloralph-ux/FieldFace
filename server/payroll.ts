@@ -1,0 +1,41 @@
+import { WEEKEND_DAYS } from "@shared/const";
+
+export function isWeekendDate(d: Date): boolean {
+  return WEEKEND_DAYS.includes(d.getDay());
+}
+
+/** Hours between two timestamps, rounded to 2 decimal places. Never negative. */
+export function hoursBetween(start: Date, end: Date): number {
+  const ms = end.getTime() - start.getTime();
+  const hours = Math.max(0, ms / 1000 / 60 / 60);
+  return Math.round(hours * 100) / 100;
+}
+
+export interface PayrollTotals {
+  weekdayHours: number;
+  weekendHours: number;
+  totalHours: number;
+  grossPay: number;
+}
+
+export function computePayroll(
+  shifts: { hours: string | number; isWeekend: boolean }[],
+  hourlyRateWeekday: string | number,
+  hourlyRateWeekend: string | number,
+): PayrollTotals {
+  let weekdayHours = 0;
+  let weekendHours = 0;
+  for (const shift of shifts) {
+    const hours = Number(shift.hours);
+    if (shift.isWeekend) weekendHours += hours;
+    else weekdayHours += hours;
+  }
+  weekdayHours = Math.round(weekdayHours * 100) / 100;
+  weekendHours = Math.round(weekendHours * 100) / 100;
+  const totalHours = Math.round((weekdayHours + weekendHours) * 100) / 100;
+  const grossPay =
+    Math.round(
+      (weekdayHours * Number(hourlyRateWeekday) + weekendHours * Number(hourlyRateWeekend)) * 100,
+    ) / 100;
+  return { weekdayHours, weekendHours, totalHours, grossPay };
+}
