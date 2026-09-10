@@ -33,6 +33,6 @@ if (process.env.NODE_ENV === "production") {
 
 const port = Number(process.env.PORT) || 3001;
 app.listen(port, () => {
-  console.log(`Fieldface server listening on :${port}`);
+  console.log(`FieldFace server listening on :${port}`);
   startPayslipCron();
 });
