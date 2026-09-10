@@ -1,4 +1,4 @@
--- Fieldface database schema.
+-- FieldFace database schema.
 -- Run this once in the Supabase SQL editor (or via `pnpm db:push` using drizzle-kit).
 -- All application reads/writes go through the Express/tRPC server using the
 -- service role, so RLS below is defense-in-depth in case anything ever talks
@@ -12,18 +12,6 @@ create table if not exists public.employers (
   contact_email text,
   contact_phone text,
   address text,
-  tax_number text,
-  company_reg_number text,
-  uif_enabled boolean not null default false,
-  uif_employee_rate numeric(5, 2) not null default 1.00,
-  uif_employer_rate numeric(5, 2) not null default 1.00,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.platform_admins (
-  id uuid primary key references auth.users(id) on delete cascade,
-  full_name text not null,
-  email text not null,
   created_at timestamptz not null default now()
 );
 
@@ -55,8 +43,6 @@ create table if not exists public.employees (
   employee_code text not null,
   full_name text not null,
   id_number text,
-  tax_number text,
-  physical_address text,
   phone text,
   email text,
   pin_hash text not null,
@@ -111,8 +97,6 @@ create table if not exists public.payslips (
   hourly_rate_weekday numeric(10, 2) not null,
   hourly_rate_weekend numeric(10, 2) not null,
   gross_pay numeric(10, 2) not null,
-  uif_deduction numeric(10, 2) not null default 0,
-  net_pay numeric(10, 2) not null,
   pdf_path text not null,
   generated_at timestamptz not null default now(),
   unique (employee_id, period_year, period_month)
@@ -147,7 +131,6 @@ alter table public.employees enable row level security;
 alter table public.time_entries enable row level security;
 alter table public.shifts enable row level security;
 alter table public.payslips enable row level security;
-alter table public.platform_admins enable row level security;
 
 drop policy if exists admin_read_own_employer on public.employers;
 create policy admin_read_own_employer on public.employers for select to authenticated
