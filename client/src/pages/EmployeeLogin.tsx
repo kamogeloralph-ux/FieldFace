@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 
 export default function EmployeeLogin() {
@@ -20,7 +20,9 @@ export default function EmployeeLogin() {
   return (
     <div className="min-h-screen flex flex-col justify-center px-6 py-10 max-w-sm mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-emerald-800">SitePresence</h1>
+        <Link to="/" className="inline-block mb-4">
+          <img src="/fieldface-logo.png" alt="Fieldface" className="h-7 w-auto mx-auto" />
+        </Link>
         <p className="text-slate-500 mt-1">Enter your employee code and PIN to clock in or out.</p>
       </div>
 

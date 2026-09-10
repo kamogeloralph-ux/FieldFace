@@ -34,7 +34,7 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex flex-col justify-center px-6 py-10 max-w-sm mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-emerald-800">SitePresence Admin</h1>
+        <img src="/fieldface-logo.png" alt="Fieldface" className="h-7 w-auto mx-auto mb-4" />
         <p className="text-slate-500 mt-1">Sign in to manage employees, sites and payslips.</p>
       </div>
       <form className="space-y-4" onSubmit={handleSubmit}>

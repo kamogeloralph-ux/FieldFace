@@ -1,4 +1,4 @@
--- SitePresence database schema.
+-- Fieldface database schema.
 -- Run this once in the Supabase SQL editor (or via `pnpm db:push` using drizzle-kit).
 -- All application reads/writes go through the Express/tRPC server using the
 -- service role, so RLS below is defense-in-depth in case anything ever talks
