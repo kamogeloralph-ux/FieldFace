@@ -64,7 +64,7 @@ export default function WelcomeScreen() {
             <p className="text-emerald-200 text-sm">Crew · code + PIN</p>
           </Link>
           <Link to="/company/login" className="block rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 active:scale-[0.98] transition">
-            <p className="font-semibold text-slate-800">Supervisor sign in</p>
+            <p className="font-semibold text-slate-800">Management Sign in</p>
             <p className="text-slate-500 text-sm">Sites · crew · payslips</p>
           </Link>
         </div>

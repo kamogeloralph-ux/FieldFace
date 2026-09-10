@@ -94,6 +94,7 @@ export default function EmployeeFormModal({
       if (isEditing && editing) {
         await updateEmployee.mutateAsync({
           id: editing.id,
+          employeeCode: form.employeeCode.trim(),
           fullName: form.fullName.trim(),
           idNumber: form.idNumber || undefined,
           taxNumber: form.taxNumber || undefined,
@@ -147,10 +148,8 @@ export default function EmployeeFormModal({
             placeholder="Employee number"
             value={form.employeeCode}
             onChange={(e) => setForm((f) => ({ ...f, employeeCode: e.target.value }))}
-            disabled={isEditing}
             required
           />
-          {isEditing && <p className="text-xs text-slate-400 mt-1">Employee numbers can't be changed once created.</p>}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -71,6 +71,7 @@ export const employeesRouter = router({
     .input(
       z.object({
         id: z.string().uuid(),
+        employeeCode: z.string().min(1).optional(),
         fullName: z.string().min(1).optional(),
         idNumber: z.string().optional(),
         taxNumber: z.string().optional(),
@@ -90,6 +91,16 @@ export const employeesRouter = router({
         .from(employees)
         .where(and(eq(employees.id, id), eq(employees.employerId, ctx.admin.employerId)));
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (rest.employeeCode && rest.employeeCode !== existing.employeeCode) {
+        const clash = await db
+          .select()
+          .from(employees)
+          .where(and(eq(employees.employerId, ctx.admin.employerId), eq(employees.employeeCode, rest.employeeCode)));
+        if (clash.length > 0) {
+          throw new TRPCError({ code: "CONFLICT", message: "That employee number is already in use." });
+        }
+      }
 
       const values: Record<string, unknown> = { ...rest };
       if (typeof values.hourlyRateWeekday === "number") values.hourlyRateWeekday = String(values.hourlyRateWeekday);
