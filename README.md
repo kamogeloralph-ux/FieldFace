@@ -1,23 +1,19 @@
-# Fieldface
+# FieldFace
 
 A GPS + selfie-verified clock-in/out system for field and public works employees,
 built for employers who don't have a clocking system yet.
 
-- **Main app** (`/`) — a welcome screen leading to two flows in the same bundle:
-  - **Employee clock-in** (`/clock-in`) — enter employee code + PIN, then clock
-    in/out by taking a selfie at the supervisor-designated area. Both GPS
-    location and the photo are captured and checked against a geofence.
-  - **Company dashboard** (`/company`) — supervisors/employers sign in to manage
-    their own company: worksites (GPS point + reference photo), employees
-    (rates, PINs, tax/ID numbers), a live Daily Report, and monthly PDF payslips.
-- **Owner console** (`/admin`) — for the platform owner only. Lists every company
-  on Fieldface, lets the owner create or delete a company, or step directly into
-  a company's dashboard to fix something.
+- **Employee app** (`/`) — enter employee code + PIN, then clock in/out by taking a
+  selfie at the supervisor-designated area. Both GPS location and the photo are
+  captured and checked against a geofence around the site.
+- **Admin app** (`/admin.html`) — manage employer details, worksites (with GPS
+  point + reference photo of the designated spot), and employees (rates, PINs).
+  Includes a live Daily Report dashboard and monthly PDF payslip generation.
 
 ## Stack
 
-React + Vite (two entry points: `client/index.html` for the main app, `client/admin.html`
-for the owner console) · Express + tRPC · Drizzle ORM · Supabase (Postgres, Storage, Auth) ·
+React + Vite (two entry points: `client/index.html` for employees, `client/admin.html`
+for admins) · Express + tRPC · Drizzle ORM · Supabase (Postgres, Storage, Auth) ·
 pdfkit for payslip PDFs · node-cron for the monthly auto-generation job.
 
 ## 1. Create a Supabase project
@@ -99,45 +95,3 @@ code + PIN.
 - This was scaffolded without a working `node_modules` install/build check in the
   authoring environment (no network access there) — run `pnpm install && pnpm check`
   after downloading to catch any dependency-version mismatches before deploying.
-
-## Publishing the main app to Google Play
-
-The main app (`/`) is already a fully configured, installable PWA — manifest,
-full icon set (including maskable icons for Android's adaptive icon shapes),
-service worker, and a `.well-known/assetlinks.json` placeholder are all in
-`client/public/`. What's left is wrapping it as an Android app (a **Trusted
-Web Activity**, or TWA) and uploading that to the Play Console. This step
-needs an Android build toolchain (JDK + Android SDK), which isn't available
-in this chat environment, so it has to be done from a computer with Node
-installed:
-
-1. **Install Bubblewrap** (Google's official PWA-to-Android CLI):
-   ```
-   npm i -g @bubblewrap/cli
-   ```
-2. **Initialize the Android project**, pointing at the manifest on your live
-   Railway URL:
-   ```
-   bubblewrap init --manifest=https://<your-domain>/manifest.webmanifest
-   ```
-   Bubblewrap will ask for a package name (reverse-domain style, e.g.
-   `com.fieldface.app` — matches the placeholder already in
-   `assetlinks.json`, or change both to match whatever you pick) and will
-   create/reuse a signing keystore. **Keep that keystore file safe** — every
-   future update to the app must be signed with the same key.
-3. **Build it**: `bubblewrap build`. This produces a signed `.aab` (Android
-   App Bundle) ready for Play Console, plus prints the app's SHA-256
-   signing fingerprint.
-4. **Update `assetlinks.json`** in this repo with your real `package_name`
-   and that SHA-256 fingerprint (replacing the placeholder), then redeploy.
-   This is what lets Android verify your app is allowed to open the site
-   full-screen with no browser UI, instead of falling back to a plain
-   browser tab.
-5. **Play Console**: create an app, upload the `.aab` under
-   Production → Create release, fill in the store listing (screenshots,
-   description, privacy policy URL — required even for a free app), and
-   submit for review.
-
-An easier alternative to steps 1–3 if you'd rather not install anything
-locally: [pwabuilder.com](https://www.pwabuilder.com) — paste your live URL
-in and it generates the same signed Android package through a web UI.
