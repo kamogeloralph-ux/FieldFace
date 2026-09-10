@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { trpc } from "../lib/trpc";
 
@@ -23,7 +23,7 @@ export default function AdminLogin() {
       }
       await adminLogin.mutateAsync({ accessToken: data.session.access_token });
       await utils.auth.adminMe.invalidate();
-      navigate("/company");
+      navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
     } finally {
@@ -34,9 +34,7 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex flex-col justify-center px-6 py-10 max-w-sm mx-auto">
       <div className="text-center mb-8">
-        <Link to="/" className="inline-block mb-4">
-          <img src="/fieldface-logo.png" alt="Fieldface" className="h-7 w-auto mx-auto" />
-        </Link>
+        <h1 className="text-2xl font-bold text-emerald-800">FieldFace Admin</h1>
         <p className="text-slate-500 mt-1">Sign in to manage employees, sites and payslips.</p>
       </div>
       <form className="space-y-4" onSubmit={handleSubmit}>
