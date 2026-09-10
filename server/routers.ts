@@ -6,9 +6,11 @@ import { employeesRouter } from "./routers/employees";
 import { timeEntriesRouter } from "./routers/timeEntries";
 import { reportsRouter } from "./routers/reports";
 import { payslipsRouter } from "./routers/payslips";
+import { platformRouter } from "./routers/platform";
 
 export const appRouter = router({
   auth: authRouter,
+  platform: platformRouter,
   employers: employersRouter,
   sites: sitesRouter,
   employees: employeesRouter,

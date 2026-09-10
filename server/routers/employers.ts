@@ -17,12 +17,22 @@ export const employersRouter = router({
         contactEmail: z.string().email().optional().or(z.literal("")),
         contactPhone: z.string().optional(),
         address: z.string().optional(),
+        taxNumber: z.string().optional(),
+        companyRegNumber: z.string().optional(),
+        uifEnabled: z.boolean().optional(),
+        uifEmployeeRate: z.number().min(0).max(100).optional(),
+        uifEmployerRate: z.number().min(0).max(100).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const { uifEmployeeRate, uifEmployerRate, ...rest } = input;
+      const values: Record<string, unknown> = { ...rest };
+      if (typeof uifEmployeeRate === "number") values.uifEmployeeRate = uifEmployeeRate.toString();
+      if (typeof uifEmployerRate === "number") values.uifEmployerRate = uifEmployerRate.toString();
+
       const [updated] = await db
         .update(employers)
-        .set(input)
+        .set(values)
         .where(eq(employers.id, ctx.admin.employerId))
         .returning();
       return updated;

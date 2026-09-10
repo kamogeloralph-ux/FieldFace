@@ -34,8 +34,11 @@ export default function EmployeesPage() {
         {employees.data?.map((emp) => (
           <div key={emp.id} className="card flex flex-col gap-3 sm:flex-row sm:items-center">
             <button className="flex-1 text-left" onClick={() => openEdit(emp)}>
-              <p className="font-medium text-slate-800">
-                {emp.fullName} <span className="text-slate-400 font-normal">· {emp.employeeCode}</span>
+              <p className="font-medium text-slate-800 flex items-center gap-2 flex-wrap">
+                {emp.fullName}
+                <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5">
+                  # {emp.employeeCode}
+                </span>
               </p>
               <p className="text-xs text-slate-500">
                 Weekday {"R" + emp.hourlyRateWeekday}/hr · Weekend {"R" + emp.hourlyRateWeekend}/hr

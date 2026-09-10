@@ -18,6 +18,20 @@ export const employers = pgTable("employers", {
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   address: text("address"),
+  taxNumber: text("tax_number"),
+  companyRegNumber: text("company_reg_number"),
+  uifEnabled: boolean("uif_enabled").notNull().default(false),
+  uifEmployeeRate: numeric("uif_employee_rate", { precision: 5, scale: 2 }).notNull().default("1.00"),
+  uifEmployerRate: numeric("uif_employer_rate", { precision: 5, scale: 2 }).notNull().default("1.00"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Platform-level admins (the app owner). Not tied to any one employer;
+// they manage the list of companies as a whole.
+export const platformAdmins = pgTable("platform_admins", {
+  id: uuid("id").primaryKey(), // matches supabase auth.users.id
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -52,6 +66,8 @@ export const employees = pgTable("employees", {
   employeeCode: text("employee_code").notNull(), // short id/badge number employee types in to log in
   fullName: text("full_name").notNull(),
   idNumber: text("id_number"),
+  taxNumber: text("tax_number"),
+  physicalAddress: text("physical_address"),
   phone: text("phone"),
   email: text("email"),
   pinHash: text("pin_hash").notNull(), // bcrypt hash of a 4-6 digit PIN
@@ -107,6 +123,8 @@ export const payslips = pgTable("payslips", {
   hourlyRateWeekday: numeric("hourly_rate_weekday", { precision: 10, scale: 2 }).notNull(),
   hourlyRateWeekend: numeric("hourly_rate_weekend", { precision: 10, scale: 2 }).notNull(),
   grossPay: numeric("gross_pay", { precision: 10, scale: 2 }).notNull(),
+  uifDeduction: numeric("uif_deduction", { precision: 10, scale: 2 }).notNull().default("0"),
+  netPay: numeric("net_pay", { precision: 10, scale: 2 }).notNull(),
   pdfPath: text("pdf_path").notNull(),
   generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({

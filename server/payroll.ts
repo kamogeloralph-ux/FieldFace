@@ -39,3 +39,15 @@ export function computePayroll(
     ) / 100;
   return { weekdayHours, weekendHours, totalHours, grossPay };
 }
+
+/**
+ * South Africa's UIF is the classic case here: 1% employee-side deduction
+ * (matched by a 1% employer contribution that isn't deducted from the
+ * employee), but the rate is configurable per company since not every
+ * deployment will use SA's default.
+ */
+export function computeUifDeduction(grossPay: number, uifEnabled: boolean, uifEmployeeRate: string | number): number {
+  if (!uifEnabled) return 0;
+  const rate = Number(uifEmployeeRate) / 100;
+  return Math.round(grossPay * rate * 100) / 100;
+}

@@ -63,10 +63,10 @@ export default function WelcomeScreen() {
             <p className="font-semibold">I'm clocking in</p>
             <p className="text-emerald-200 text-sm">Crew · code + PIN</p>
           </Link>
-          <a href="/admin.html" className="block rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 active:scale-[0.98] transition">
+          <Link to="/company/login" className="block rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 active:scale-[0.98] transition">
             <p className="font-semibold text-slate-800">Supervisor sign in</p>
             <p className="text-slate-500 text-sm">Sites · crew · payslips</p>
-          </a>
+          </Link>
         </div>
 
         <p className="text-center text-xs font-semibold tracking-wide text-slate-400 mb-4">HOW A SHIFT IS RECORDED</p>

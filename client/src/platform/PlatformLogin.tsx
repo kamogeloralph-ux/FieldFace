@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { trpc } from "../lib/trpc";
 
-export default function AdminLogin() {
+export default function PlatformLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const utils = trpc.useUtils();
-  const adminLogin = trpc.auth.adminLogin.useMutation();
+  const platformLogin = trpc.platform.login.useMutation();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,9 +21,9 @@ export default function AdminLogin() {
       if (supaError || !data.session) {
         throw new Error(supaError?.message ?? "Invalid email or password.");
       }
-      await adminLogin.mutateAsync({ accessToken: data.session.access_token });
-      await utils.auth.adminMe.invalidate();
-      navigate("/company");
+      await platformLogin.mutateAsync({ accessToken: data.session.access_token });
+      await utils.platform.me.invalidate();
+      navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
     } finally {
@@ -34,10 +34,8 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex flex-col justify-center px-6 py-10 max-w-sm mx-auto">
       <div className="text-center mb-8">
-        <Link to="/" className="inline-block mb-4">
-          <img src="/fieldface-logo.png" alt="Fieldface" className="h-7 w-auto mx-auto" />
-        </Link>
-        <p className="text-slate-500 mt-1">Sign in to manage employees, sites and payslips.</p>
+        <img src="/fieldface-logo.png" alt="Fieldface" className="h-7 w-auto mx-auto mb-4" />
+        <p className="text-slate-500 mt-1">Owner console — manage every company on Fieldface.</p>
       </div>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>

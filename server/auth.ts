@@ -2,7 +2,7 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
-import { ADMIN_COOKIE_NAME, EMPLOYEE_COOKIE_NAME } from "@shared/const";
+import { ADMIN_COOKIE_NAME, EMPLOYEE_COOKIE_NAME, PLATFORM_COOKIE_NAME } from "@shared/const";
 import { supabaseAdmin } from "./storage";
 
 const SESSION_SECRET = process.env.SESSION_SECRET;
@@ -20,6 +20,10 @@ export interface AdminSession {
   adminUserId: string;
   employerId: string;
   role: "owner" | "supervisor";
+}
+
+export interface PlatformSession {
+  platformAdminId: string;
 }
 
 const COOKIE_OPTIONS = {
@@ -87,4 +91,27 @@ export function readAdminSession(req: Request): AdminSession | null {
 
 export function clearAdminSession(res: Response) {
   res.clearCookie(ADMIN_COOKIE_NAME, { ...COOKIE_OPTIONS, maxAge: -1 });
+}
+
+// --- Platform owner auth (Supabase Auth email/password, same pattern as admin) ---
+// Platform admins are not tied to a single employer: they manage the list of
+// companies as a whole (create/delete a company, or step into one to fix it).
+
+export function issuePlatformSession(res: Response, session: PlatformSession) {
+  const token = jwt.sign(session, SESSION_SECRET!, { expiresIn: "12h" });
+  res.cookie(PLATFORM_COOKIE_NAME, token, COOKIE_OPTIONS);
+}
+
+export function readPlatformSession(req: Request): PlatformSession | null {
+  const token = req.cookies?.[PLATFORM_COOKIE_NAME];
+  if (!token) return null;
+  try {
+    return jwt.verify(token, SESSION_SECRET!) as PlatformSession;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPlatformSession(res: Response) {
+  res.clearCookie(PLATFORM_COOKIE_NAME, { ...COOKIE_OPTIONS, maxAge: -1 });
 }

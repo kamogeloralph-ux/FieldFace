@@ -9,6 +9,8 @@ import { TRPCError } from "@trpc/server";
 const employeeBase = {
   fullName: z.string().min(1),
   idNumber: z.string().optional(),
+  taxNumber: z.string().optional(),
+  physicalAddress: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   hourlyRateWeekday: z.number().min(0),
@@ -53,6 +55,8 @@ export const employeesRouter = router({
           employeeCode: input.employeeCode,
           fullName: input.fullName,
           idNumber: input.idNumber,
+          taxNumber: input.taxNumber,
+          physicalAddress: input.physicalAddress,
           phone: input.phone,
           email: input.email || undefined,
           pinHash,
@@ -67,7 +71,15 @@ export const employeesRouter = router({
     .input(
       z.object({
         id: z.string().uuid(),
-        ...Object.fromEntries(Object.entries(employeeBase).map(([k, v]) => [k, v.optional()])),
+        fullName: z.string().min(1).optional(),
+        idNumber: z.string().optional(),
+        taxNumber: z.string().optional(),
+        physicalAddress: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional().or(z.literal("")),
+        hourlyRateWeekday: z.number().min(0).optional(),
+        hourlyRateWeekend: z.number().min(0).optional(),
+        siteId: z.string().uuid().optional().nullable(),
         active: z.boolean().optional(),
       }),
     )

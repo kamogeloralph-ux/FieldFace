@@ -1,13 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
 import { employees, employers, payslips, shifts } from "../drizzle/schema";
-import { computePayroll } from "./payroll";
+import { computePayroll, computeUifDeduction } from "./payroll";
 import { generatePayslipPdf } from "./pdf/payslip";
 import { uploadPayslipPdf } from "./storage";
 
 export async function generatePayslipForEmployee(
   employerId: string,
-  employerName: string,
+  employer: typeof employers.$inferSelect,
   employee: typeof employees.$inferSelect,
   year: number,
   month: number,
@@ -21,11 +21,20 @@ export async function generatePayslipForEmployee(
   const periodShifts = allShifts.filter((s) => s.shiftDate >= from && s.shiftDate <= to);
 
   const totals = computePayroll(periodShifts, employee.hourlyRateWeekday, employee.hourlyRateWeekend);
+  const uifDeduction = computeUifDeduction(totals.grossPay, employer.uifEnabled, employer.uifEmployeeRate);
+  const netPay = Math.round((totals.grossPay - uifDeduction) * 100) / 100;
 
   const pdfBuffer = await generatePayslipPdf({
-    employerName,
+    employerName: employer.name,
+    employerTaxNumber: employer.taxNumber,
+    employerRegNumber: employer.companyRegNumber,
+    employerAddress: employer.address,
+    employerPhone: employer.contactPhone,
     employeeName: employee.fullName,
     employeeCode: employee.employeeCode,
+    employeeIdNumber: employee.idNumber,
+    employeeTaxNumber: employee.taxNumber,
+    employeeAddress: employee.physicalAddress,
     periodYear: year,
     periodMonth: month,
     weekdayHours: totals.weekdayHours,
@@ -34,6 +43,8 @@ export async function generatePayslipForEmployee(
     hourlyRateWeekday: Number(employee.hourlyRateWeekday),
     hourlyRateWeekend: Number(employee.hourlyRateWeekend),
     grossPay: totals.grossPay,
+    uifDeduction,
+    netPay,
   });
 
   const pdfPath = await uploadPayslipPdf(employee.id, year, month, pdfBuffer);
@@ -51,6 +62,8 @@ export async function generatePayslipForEmployee(
       hourlyRateWeekday: employee.hourlyRateWeekday,
       hourlyRateWeekend: employee.hourlyRateWeekend,
       grossPay: totals.grossPay.toString(),
+      uifDeduction: uifDeduction.toString(),
+      netPay: netPay.toString(),
       pdfPath,
     })
     .onConflictDoUpdate({
@@ -60,6 +73,8 @@ export async function generatePayslipForEmployee(
         weekendHours: totals.weekendHours.toString(),
         totalHours: totals.totalHours.toString(),
         grossPay: totals.grossPay.toString(),
+        uifDeduction: uifDeduction.toString(),
+        netPay: netPay.toString(),
         pdfPath,
         generatedAt: new Date(),
       },
@@ -71,6 +86,7 @@ export async function generatePayslipForEmployee(
 
 export async function generatePayslipsForEmployer(employerId: string, year: number, month: number) {
   const [employer] = await db.select().from(employers).where(eq(employers.id, employerId));
+  if (!employer) return [];
   const activeEmployees = await db
     .select()
     .from(employees)
@@ -78,7 +94,7 @@ export async function generatePayslipsForEmployer(employerId: string, year: numb
 
   const results = [];
   for (const employee of activeEmployees) {
-    results.push(await generatePayslipForEmployee(employerId, employer?.name ?? "Employer", employee, year, month));
+    results.push(await generatePayslipForEmployee(employerId, employer, employee, year, month));
   }
   return results;
 }

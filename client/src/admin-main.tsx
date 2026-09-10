@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { trpc, makeTrpcClient } from "./lib/trpc";
-import AdminApp from "./AdminApp";
+import PlatformApp from "./PlatformApp";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -14,7 +14,7 @@ ReactDOM.createRoot(document.getElementById("admin-root")!).render(
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <AdminApp />
+          <PlatformApp />
         </BrowserRouter>
       </QueryClientProvider>
     </trpc.Provider>

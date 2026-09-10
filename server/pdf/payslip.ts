@@ -7,8 +7,15 @@ const MONTH_NAMES = [
 
 export interface PayslipPdfInput {
   employerName: string;
+  employerTaxNumber?: string | null;
+  employerRegNumber?: string | null;
+  employerAddress?: string | null;
+  employerPhone?: string | null;
   employeeName: string;
   employeeCode: string;
+  employeeIdNumber?: string | null;
+  employeeTaxNumber?: string | null;
+  employeeAddress?: string | null;
   periodYear: number;
   periodMonth: number; // 1-12
   weekdayHours: number;
@@ -17,6 +24,8 @@ export interface PayslipPdfInput {
   hourlyRateWeekday: number;
   hourlyRateWeekend: number;
   grossPay: number;
+  uifDeduction: number;
+  netPay: number;
   currency?: string;
 }
 
@@ -31,19 +40,33 @@ export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
 
     const money = (n: number) => `${currency} ${n.toFixed(2)}`;
 
+    // --- Company header -----------------------------------------------
     doc.fontSize(20).text(input.employerName, { align: "left" });
     doc.moveDown(0.2);
     doc.fontSize(12).fillColor("#555").text("Payslip", { align: "left" });
     doc.fillColor("#000");
+    doc.fontSize(9).fillColor("#555");
+    const companyLines = [
+      input.employerRegNumber ? `Reg no: ${input.employerRegNumber}` : null,
+      input.employerTaxNumber ? `Tax no: ${input.employerTaxNumber}` : null,
+      input.employerAddress ?? null,
+      input.employerPhone ? `Tel: ${input.employerPhone}` : null,
+    ].filter(Boolean) as string[];
+    for (const line of companyLines) doc.text(line);
+    doc.fillColor("#000");
     doc.moveDown(1);
 
+    // --- Employee details ------------------------------------------------
     doc.fontSize(11);
     doc.text(`Employee: ${input.employeeName}`);
-    doc.text(`Employee code: ${input.employeeCode}`);
+    doc.text(`Employee number: ${input.employeeCode}`);
+    if (input.employeeIdNumber) doc.text(`ID number: ${input.employeeIdNumber}`);
+    if (input.employeeTaxNumber) doc.text(`Tax number: ${input.employeeTaxNumber}`);
+    if (input.employeeAddress) doc.text(`Address: ${input.employeeAddress}`);
     doc.text(`Pay period: ${MONTH_NAMES[input.periodMonth - 1]} ${input.periodYear}`);
     doc.moveDown(1);
 
-    // Table header
+    // --- Earnings table ------------------------------------------------
     const tableTop = doc.y;
     const col1 = 50, col2 = 260, col3 = 380, col4 = 490;
     doc.font("Helvetica-Bold");
@@ -83,9 +106,30 @@ export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
     doc.moveDown(0.8);
 
     rowY = doc.y;
-    doc.fontSize(13);
     doc.text("Gross pay", col1, rowY);
     doc.text(money(input.grossPay), col4, rowY);
+    doc.font("Helvetica").fontSize(11);
+    doc.moveDown(1.2);
+
+    // --- Deductions ------------------------------------------------------
+    doc.font("Helvetica-Bold").text("Deductions", col1, doc.y);
+    doc.font("Helvetica");
+    doc.moveDown(0.5);
+    doc.moveTo(col1, doc.y).lineTo(545, doc.y).strokeColor("#ccc").stroke();
+    doc.moveDown(0.5);
+
+    rowY = doc.y;
+    doc.text("UIF", col1, rowY);
+    doc.text(input.uifDeduction > 0 ? `-${money(input.uifDeduction)}` : money(0), col4, rowY);
+    doc.moveDown(1);
+
+    doc.moveTo(col1, doc.y).lineTo(545, doc.y).strokeColor("#000").stroke();
+    doc.moveDown(0.5);
+
+    doc.font("Helvetica-Bold").fontSize(13);
+    rowY = doc.y;
+    doc.text("Net pay", col1, rowY);
+    doc.text(money(input.netPay), col4, rowY);
     doc.font("Helvetica").fontSize(11);
 
     doc.moveDown(3);
