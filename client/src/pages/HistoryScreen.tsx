@@ -12,9 +12,14 @@ export default function HistoryScreen() {
     <div className="min-h-screen max-w-sm mx-auto px-5 py-6">
       <header className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-slate-800">My hours</h1>
-        <button className="text-sm text-slate-500 underline" onClick={() => navigate("/clock")}>
-          Back
-        </button>
+        <div className="flex gap-3">
+          <button className="text-sm text-slate-500 underline" onClick={() => navigate("/payslips")}>
+            Payslips
+          </button>
+          <button className="text-sm text-slate-500 underline" onClick={() => navigate("/clock")}>
+            Back
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-2 gap-3 mb-5">

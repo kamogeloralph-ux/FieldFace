@@ -114,6 +114,9 @@ export default function ClockScreen() {
           <button className="text-sm text-slate-500 underline" onClick={() => navigate("/history")}>
             History
           </button>
+          <button className="text-sm text-slate-500 underline" onClick={() => navigate("/payslips")}>
+            Payslips
+          </button>
           <button
             className="text-sm text-slate-500 underline"
             onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/") })}

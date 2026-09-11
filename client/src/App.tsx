@@ -5,6 +5,7 @@ import WelcomeScreen from "./pages/WelcomeScreen";
 import EmployeeLogin from "./pages/EmployeeLogin";
 import ClockScreen from "./pages/ClockScreen";
 import HistoryScreen from "./pages/HistoryScreen";
+import EmployeePayslipPage from "./pages/EmployeePayslipPage";
 import AdminLogin from "./admin/AdminLogin";
 import AdminLayout from "./admin/AdminLayout";
 import DailyReportPage from "./admin/DailyReportPage";
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/clock-in" element={<EmployeeLogin />} />
       <Route path="/clock" element={<ClockScreen />} />
       <Route path="/history" element={<HistoryScreen />} />
+      <Route path="/payslips" element={<EmployeePayslipPage />} />
 
       {/* Supervisor / employer company dashboard */}
       <Route path="/company/login" element={<AdminLogin />} />
