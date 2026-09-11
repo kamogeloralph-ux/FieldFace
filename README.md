@@ -6,9 +6,10 @@ built for employers who don't have a clocking system yet.
 - **Employee app** (`/`) — enter employee code + PIN, then clock in/out by taking a
   selfie at the supervisor-designated area. Both GPS location and the photo are
   captured and checked against a geofence around the site.
-- **Admin app** (`/admin.html`) — manage employer details, worksites (with GPS
+- **Company admin app** (`/company/login`) — manage employer details, worksites (with GPS
   point + reference photo of the designated spot), and employees (rates, PINs).
   Includes a live Daily Report dashboard and monthly PDF payslip generation.
+- **Platform owner console** (`/admin/login`) — manage every company on FieldFace.
 
 ## Stack
 
@@ -59,7 +60,8 @@ pnpm dev
 ```
 
 - Employee app: http://localhost:5173/
-- Admin app: http://localhost:5173/admin.html
+- Company admin app: http://localhost:5173/company/login
+- Platform owner console: http://localhost:5173/admin/login
 
 In the admin app: sign in → add a **Site** (use "Use my current location" while
 standing at the designated spot, set a geofence radius, upload a reference photo of

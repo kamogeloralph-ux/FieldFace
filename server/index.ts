@@ -24,9 +24,15 @@ if (process.env.NODE_ENV === "production") {
   const path = await import("node:path");
   const distPath = path.resolve(import.meta.dirname, "..", "dist", "public");
   app.use(express.static(distPath));
+
+  // The platform-owner console is built from admin.html but is exposed at /admin.
+  // Keep /admin.html as a compatibility URL for existing bookmarks.
+  app.get("/admin.html", (_req, res) => res.redirect(301, "/admin"));
+  app.get("/admin", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
+  app.get("/admin/*", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
+
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api")) return next();
-    if (req.path.startsWith("/admin")) return res.sendFile(path.join(distPath, "admin.html"));
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
