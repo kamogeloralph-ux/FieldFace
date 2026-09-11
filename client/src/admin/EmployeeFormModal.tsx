@@ -4,7 +4,6 @@ import { trpc } from "../lib/trpc";
 export type EmployeeFormValues = {
   employeeCode: string;
   fullName: string;
-  idNumber: string;
   taxNumber: string;
   physicalAddress: string;
   phone: string;
@@ -18,7 +17,6 @@ export type EmployeeFormValues = {
 const emptyForm: EmployeeFormValues = {
   employeeCode: "",
   fullName: "",
-  idNumber: "",
   taxNumber: "",
   physicalAddress: "",
   phone: "",
@@ -33,7 +31,6 @@ export type EditingEmployee = {
   id: string;
   employeeCode: string;
   fullName: string;
-  idNumber: string | null;
   taxNumber: string | null;
   physicalAddress: string | null;
   phone: string | null;
@@ -67,7 +64,6 @@ export default function EmployeeFormModal({
       setForm({
         employeeCode: editing.employeeCode,
         fullName: editing.fullName,
-        idNumber: editing.idNumber ?? "",
         taxNumber: editing.taxNumber ?? "",
         physicalAddress: editing.physicalAddress ?? "",
         phone: editing.phone ?? "",
@@ -96,21 +92,17 @@ export default function EmployeeFormModal({
           id: editing.id,
           employeeCode: form.employeeCode.trim(),
           fullName: form.fullName.trim(),
-          idNumber: form.idNumber || undefined,
           taxNumber: form.taxNumber || undefined,
           physicalAddress: form.physicalAddress || undefined,
           phone: form.phone || undefined,
           email: form.email || undefined,
-          hourlyRateWeekday: Number(form.hourlyRateWeekday),
-          hourlyRateWeekend: Number(form.hourlyRateWeekend),
           siteId: form.siteId || null,
         });
       } else {
         await createEmployee.mutateAsync({
           employeeCode: form.employeeCode.trim(),
           fullName: form.fullName.trim(),
-          idNumber: form.idNumber || undefined,
-          taxNumber: form.taxNumber || undefined,
+          taxNumber: form.taxNumber,
           physicalAddress: form.physicalAddress || undefined,
           phone: form.phone || undefined,
           email: form.email || undefined,
@@ -154,8 +146,7 @@ export default function EmployeeFormModal({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input className="input-field" placeholder="Full name" value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} required />
-          <input className="input-field" placeholder="ID number" value={form.idNumber} onChange={(e) => setForm((f) => ({ ...f, idNumber: e.target.value }))} />
-          <input className="input-field" placeholder="Tax number" value={form.taxNumber} onChange={(e) => setForm((f) => ({ ...f, taxNumber: e.target.value }))} />
+          <input className="input-field" placeholder="Tax number (used to clock in)" value={form.taxNumber} onChange={(e) => setForm((f) => ({ ...f, taxNumber: e.target.value }))} required />
           <input className="input-field" placeholder="Phone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
           <input className="input-field" placeholder="Email (optional)" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
           <select className="input-field" value={form.siteId} onChange={(e) => setForm((f) => ({ ...f, siteId: e.target.value }))}>
@@ -174,8 +165,8 @@ export default function EmployeeFormModal({
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input className="input-field" placeholder="Weekday rate / hr" type="number" step="0.01" value={form.hourlyRateWeekday} onChange={(e) => setForm((f) => ({ ...f, hourlyRateWeekday: e.target.value }))} required />
-          <input className="input-field" placeholder="Weekend rate / hr" type="number" step="0.01" value={form.hourlyRateWeekend} onChange={(e) => setForm((f) => ({ ...f, hourlyRateWeekend: e.target.value }))} required />
+          <input className="input-field" placeholder="Weekday rate / hr" type="number" step="0.01" value={form.hourlyRateWeekday} readOnly={isEditing} onChange={(e) => setForm((f) => ({ ...f, hourlyRateWeekday: e.target.value }))} required />
+          <input className="input-field" placeholder="Weekend rate / hr" type="number" step="0.01" value={form.hourlyRateWeekend} readOnly={isEditing} onChange={(e) => setForm((f) => ({ ...f, hourlyRateWeekend: e.target.value }))} required />
           {!isEditing && (
             <input
               className="input-field"
@@ -190,7 +181,7 @@ export default function EmployeeFormModal({
 
         {isEditing && (
           <p className="text-xs text-slate-500">
-            To change this employee's PIN, use "Reset PIN" from the employee list instead.
+            Rates are locked after setup. Contact the platform administrator for rate changes. To change this employee's PIN, use "Reset PIN" from the employee list instead.
           </p>
         )}
 

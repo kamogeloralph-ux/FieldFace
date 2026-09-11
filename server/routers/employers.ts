@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { employers } from "../../drizzle/schema";
-import { adminProcedure, router } from "../trpc";
+import { adminProcedure, platformProcedure, router } from "../trpc";
 
 export const employersRouter = router({
   getMine: adminProcedure.query(async ({ ctx }) => {
@@ -10,9 +10,10 @@ export const employersRouter = router({
     return employer ?? null;
   }),
 
-  updateMine: adminProcedure
+  updateMine: platformProcedure
     .input(
       z.object({
+        employerId: z.string().uuid(),
         name: z.string().min(1).optional(),
         contactEmail: z.string().email().optional().or(z.literal("")),
         contactPhone: z.string().optional(),
@@ -25,7 +26,7 @@ export const employersRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { uifEmployeeRate, uifEmployerRate, ...rest } = input;
+      const { employerId, uifEmployeeRate, uifEmployerRate, ...rest } = input;
       const values: Record<string, unknown> = { ...rest };
       if (typeof uifEmployeeRate === "number") values.uifEmployeeRate = uifEmployeeRate.toString();
       if (typeof uifEmployerRate === "number") values.uifEmployerRate = uifEmployerRate.toString();
@@ -33,7 +34,7 @@ export const employersRouter = router({
       const [updated] = await db
         .update(employers)
         .set(values)
-        .where(eq(employers.id, ctx.admin.employerId))
+        .where(eq(employers.id, input.employerId))
         .returning();
       return updated;
     }),

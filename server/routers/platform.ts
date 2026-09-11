@@ -65,6 +65,30 @@ export const platformRouter = router({
       return created;
     }),
 
+  updateCompany: platformProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      name: z.string().min(1),
+      contactEmail: z.string().email().optional().or(z.literal("")),
+      contactPhone: z.string().optional(),
+      address: z.string().optional(),
+      taxNumber: z.string().optional(),
+      companyRegNumber: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...values } = input;
+      const [updated] = await db.update(employers).set(values).where(eq(employers.id, id)).returning();
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
+      return updated;
+    }),
+
+  listCompanyEmployees: platformProcedure
+    .input(z.object({ employerId: z.string().uuid() }))
+    .query(async ({ input }) => {
+      const rows = await db.select().from(employees).where(eq(employees.employerId, input.employerId));
+      return rows.map(({ pinHash, ...employee }) => employee);
+    }),
+
   deleteCompany: platformProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ input }) => {

@@ -17,6 +17,7 @@ export default function ClockScreen() {
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ withinGeofence: boolean; distanceMeters: number; entryType: string } | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -126,24 +127,28 @@ export default function ClockScreen() {
         </div>
       </header>
 
-      {status.data?.site && stage === "idle" && (
-        <div className="card mb-5">
-          <p className="text-sm font-medium text-slate-700 mb-2">Stand at the designated area:</p>
-          <p className="font-semibold text-slate-800 mb-2">{status.data.site.name}</p>
-          {status.data.site.referencePhotoUrl && (
-            <img
-              src={status.data.site.referencePhotoUrl}
-              alt="Designated selfie spot"
-              className="w-full rounded-lg object-cover aspect-square"
-            />
+      {stage === "idle" && (
+        <div className="space-y-3">
+          <button className="btn-primary text-lg py-4" onClick={startCamera}>
+            {actionLabel} — Take Selfie
+          </button>
+          {status.data?.site && (
+            <div className="card !p-0 overflow-hidden">
+              <button
+                className="w-full flex items-center justify-between px-4 py-3 text-left"
+                onClick={() => setDetailsOpen((open) => !open)}
+                aria-expanded={detailsOpen}
+              >
+                <span><span className="text-xs text-slate-500 block">Designated area</span><span className="font-semibold text-slate-800">{status.data.site.name}</span></span>
+                <span className="text-slate-400 text-xl">{detailsOpen ? "−" : "+"}</span>
+              </button>
+              {detailsOpen && status.data.site.referencePhotoUrl && (
+                <img src={status.data.site.referencePhotoUrl} alt="Designated selfie spot" className="w-full object-cover aspect-video" />
+              )}
+              {detailsOpen && !status.data.site.referencePhotoUrl && <p className="px-4 pb-3 text-sm text-slate-500">Stand at the designated site before taking your selfie.</p>}
+            </div>
           )}
         </div>
-      )}
-
-      {stage === "idle" && (
-        <button className="btn-primary text-lg py-4" onClick={startCamera}>
-          {actionLabel} — Take Selfie
-        </button>
       )}
 
       {stage === "camera" && (

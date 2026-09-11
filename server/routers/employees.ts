@@ -2,14 +2,13 @@ import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { employees } from "../../drizzle/schema";
-import { adminProcedure, router } from "../trpc";
+import { adminProcedure, platformProcedure, router } from "../trpc";
 import { hashPin } from "../auth";
 import { TRPCError } from "@trpc/server";
 
 const employeeBase = {
   fullName: z.string().min(1),
-  idNumber: z.string().optional(),
-  taxNumber: z.string().optional(),
+  taxNumber: z.string().min(1),
   physicalAddress: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
@@ -54,8 +53,7 @@ export const employeesRouter = router({
           siteId: input.siteId ?? null,
           employeeCode: input.employeeCode,
           fullName: input.fullName,
-          idNumber: input.idNumber,
-          taxNumber: input.taxNumber,
+        taxNumber: input.taxNumber,
           physicalAddress: input.physicalAddress,
           phone: input.phone,
           email: input.email || undefined,
@@ -73,13 +71,10 @@ export const employeesRouter = router({
         id: z.string().uuid(),
         employeeCode: z.string().min(1).optional(),
         fullName: z.string().min(1).optional(),
-        idNumber: z.string().optional(),
         taxNumber: z.string().optional(),
         physicalAddress: z.string().optional(),
         phone: z.string().optional(),
         email: z.string().email().optional().or(z.literal("")),
-        hourlyRateWeekday: z.number().min(0).optional(),
-        hourlyRateWeekend: z.number().min(0).optional(),
         siteId: z.string().uuid().optional().nullable(),
         active: z.boolean().optional(),
       }),
@@ -107,6 +102,24 @@ export const employeesRouter = router({
       if (typeof values.hourlyRateWeekend === "number") values.hourlyRateWeekend = String(values.hourlyRateWeekend);
 
       const [updated] = await db.update(employees).set(values).where(eq(employees.id, id)).returning();
+      return sanitize(updated);
+    }),
+
+  updateRates: platformProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      hourlyRateWeekday: z.number().min(0),
+      hourlyRateWeekend: z.number().min(0),
+    }))
+    .mutation(async ({ input }) => {
+      const [updated] = await db.update(employees)
+        .set({
+          hourlyRateWeekday: input.hourlyRateWeekday.toString(),
+          hourlyRateWeekend: input.hourlyRateWeekend.toString(),
+        })
+        .where(eq(employees.id, input.id))
+        .returning();
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
       return sanitize(updated);
     }),
 
