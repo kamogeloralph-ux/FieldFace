@@ -3,10 +3,16 @@ import { trpc } from "../lib/trpc";
 import EmployeeFormModal, { type EditingEmployee } from "./EmployeeFormModal";
 
 export default function EmployeesPage() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
   const utils = trpc.useUtils();
   const employees = trpc.employees.list.useQuery();
   const updateEmployee = trpc.employees.update.useMutation({ onSuccess: () => utils.employees.list.invalidate() });
   const resetPin = trpc.employees.resetPin.useMutation();
+  const generatePayslip = trpc.payslips.generateForEmployee.useMutation({
+    onSuccess: () => utils.employees.list.invalidate(),
+  });
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<EditingEmployee | null>(null);
@@ -19,6 +25,20 @@ export default function EmployeesPage() {
   function openEdit(emp: EditingEmployee) {
     setEditing(emp);
     setModalOpen(true);
+  }
+
+  async function sharePayslip(employeeId: string, employeeName: string) {
+    const result = await utils.client.payslips.shareUrl.query({ employeeId, year, month });
+    if (!result?.url) {
+      alert("Generate this month's payslip first.");
+      return;
+    }
+    const shareData = { title: `${employeeName} payslip`, text: `FieldFace payslip for ${employeeName}`, url: result.url };
+    if (navigator.share) await navigator.share(shareData).catch(() => {});
+    else {
+      await navigator.clipboard.writeText(result.url);
+      alert("Payslip link copied to the clipboard.");
+    }
   }
 
   return (
@@ -45,7 +65,18 @@ export default function EmployeesPage() {
                 {!emp.active && <span className="ml-2 text-red-500 font-medium">Inactive</span>}
               </p>
             </button>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs text-slate-400">Payslips: {emp.selfServiceGenPeriod === `${year}-${String(month).padStart(2, "0")}` ? emp.selfServiceGenCount : 0}/2 this month</span>
+              <button
+                className="text-sm text-emerald-700 underline disabled:opacity-50"
+                onClick={() => generatePayslip.mutate({ employeeId: emp.id, year, month })}
+                disabled={generatePayslip.isPending || !emp.active || (emp.selfServiceGenPeriod === `${year}-${String(month).padStart(2, "0")}` && emp.selfServiceGenCount >= 2)}
+              >
+                Generate payslip
+              </button>
+              <button className="text-sm text-emerald-700 underline" onClick={() => sharePayslip(emp.id, emp.fullName)}>
+                Share payslip
+              </button>
               <button
                 className="text-sm text-slate-500 underline"
                 onClick={() => {

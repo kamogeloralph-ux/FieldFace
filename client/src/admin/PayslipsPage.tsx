@@ -16,9 +16,15 @@ export default function PayslipsPage() {
     onSuccess: () => utils.payslips.list.invalidate(),
   });
 
-  async function download(payslipId: string) {
+  async function share(payslipId: string, employeeName: string) {
     const res = await utils.client.payslips.downloadUrl.query({ payslipId });
-    if (res?.url) window.open(res.url, "_blank");
+    if (!res?.url) return;
+    const shareData = { title: `${employeeName} payslip`, text: `FieldFace payslip for ${employeeName}`, url: res.url };
+    if (navigator.share) await navigator.share(shareData).catch(() => {});
+    else {
+      await navigator.clipboard.writeText(res.url);
+      alert("Payslip link copied to the clipboard.");
+    }
   }
 
   return (
@@ -60,8 +66,8 @@ export default function PayslipsPage() {
                 {Number(p.totalHours).toFixed(2)}h total ({Number(p.weekdayHours).toFixed(2)} weekday / {Number(p.weekendHours).toFixed(2)} weekend) · R{Number(p.grossPay).toFixed(2)}
               </p>
             </div>
-            <button className="btn-secondary download-button" onClick={() => download(p.id)}>
-              Download PDF
+            <button className="btn-secondary download-button" onClick={() => share(p.id, p.employeeName)}>
+              Share payslip
             </button>
           </div>
         ))}
