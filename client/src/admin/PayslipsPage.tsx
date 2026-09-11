@@ -26,7 +26,7 @@ export default function PayslipsPage() {
       <h1 className="text-xl font-bold text-slate-800 mb-5">Payslips</h1>
 
       <div className="card mb-6 flex items-end gap-3 flex-wrap">
-        <div>
+        <div className="responsive-field">
           <label className="block text-sm font-medium text-slate-700 mb-1">Month</label>
           <select className="input-field" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
             {MONTHS.map((m, i) => (
@@ -34,12 +34,12 @@ export default function PayslipsPage() {
             ))}
           </select>
         </div>
-        <div>
+        <div className="responsive-field year-field">
           <label className="block text-sm font-medium text-slate-700 mb-1">Year</label>
-          <input className="input-field w-28" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
+          <input className="input-field" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} />
         </div>
         <button
-          className="btn-primary w-auto px-5"
+          className="btn-primary payslip-generate-button"
           onClick={() => generate.mutate({ year, month })}
           disabled={generate.isPending}
         >
@@ -53,14 +53,14 @@ export default function PayslipsPage() {
 
       <div className="space-y-2">
         {payslips.data?.map((p) => (
-          <div key={p.id} className="card flex items-center justify-between">
+          <div key={p.id} className="card payslip-row flex items-center justify-between gap-4">
             <div>
               <p className="font-medium text-slate-800">{p.employeeName}</p>
               <p className="text-xs text-slate-500">
                 {Number(p.totalHours).toFixed(2)}h total ({Number(p.weekdayHours).toFixed(2)} weekday / {Number(p.weekendHours).toFixed(2)} weekend) · R{Number(p.grossPay).toFixed(2)}
               </p>
             </div>
-            <button className="btn-secondary w-auto px-4" onClick={() => download(p.id)}>
+            <button className="btn-secondary download-button" onClick={() => download(p.id)}>
               Download PDF
             </button>
           </div>

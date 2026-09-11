@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { trpc } from "../lib/trpc";
 
 const NAV = [
@@ -13,12 +14,19 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const me = trpc.auth.adminMe.useQuery();
   const logout = trpc.auth.adminLogout.useMutation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const closeMenu = () => setMenuOpen(false);
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-56 shrink-0 bg-emerald-900 text-emerald-50 flex flex-col p-4">
+    <div className="admin-shell min-h-screen">
+      {menuOpen && <button className="admin-drawer-backdrop" aria-label="Close navigation" onClick={closeMenu} />}
+      <aside className={`admin-sidebar ${menuOpen ? "is-open" : ""}`}>
         <div className="mb-6">
-          <p className="font-bold text-lg">FieldFace</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-bold text-lg">FieldFace</p>
+            <button className="admin-close-button" onClick={closeMenu} aria-label="Close navigation">×</button>
+          </div>
           <p className="text-xs text-emerald-300">{me.data?.employer?.name}</p>
         </div>
         <nav className="flex-1 space-y-1">
@@ -27,6 +35,7 @@ export default function AdminLayout() {
               key={item.to}
               to={item.to}
               end={item.end}
+              onClick={closeMenu}
               className={({ isActive }) =>
                 `block rounded-lg px-3 py-2 text-sm font-medium transition ${
                   isActive ? "bg-emerald-700 text-white" : "text-emerald-100 hover:bg-emerald-800"
@@ -47,9 +56,22 @@ export default function AdminLayout() {
           </button>
         </div>
       </aside>
-      <main className="flex-1 p-6 max-w-5xl">
+      <div className="admin-content-shell">
+        <header className="admin-mobile-header">
+          <button className="admin-menu-button" onClick={() => setMenuOpen(true)} aria-label="Open navigation">
+            <span />
+            <span />
+            <span />
+          </button>
+          <div>
+            <p className="font-bold text-emerald-900">FieldFace</p>
+            <p className="text-xs text-slate-500">{me.data?.employer?.name}</p>
+          </div>
+        </header>
+        <main className="admin-main">
         <Outlet />
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
