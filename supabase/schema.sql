@@ -49,6 +49,8 @@ create table if not exists public.employees (
   hourly_rate_weekday numeric(10, 2) not null,
   hourly_rate_weekend numeric(10, 2) not null,
   active boolean not null default true,
+  self_service_gen_count integer not null default 0,
+  self_service_gen_period text,
   created_at timestamptz not null default now(),
   unique (employer_id, employee_code)
 );
@@ -131,6 +133,7 @@ alter table public.employees enable row level security;
 alter table public.time_entries enable row level security;
 alter table public.shifts enable row level security;
 alter table public.payslips enable row level security;
+alter table public.platform_admins enable row level security;
 
 drop policy if exists admin_read_own_employer on public.employers;
 create policy admin_read_own_employer on public.employers for select to authenticated
@@ -147,3 +150,41 @@ create policy admin_read_own_sites on public.sites for select to authenticated
 drop policy if exists admin_read_own_employees on public.employees;
 create policy admin_read_own_employees on public.employees for select to authenticated
   using (employer_id in (select employer_id from public.admin_users where id = auth.uid()));
+
+drop policy if exists platform_admins_read_own_profile on public.platform_admins;
+create policy platform_admins_read_own_profile on public.platform_admins for select to authenticated
+  using (id = auth.uid());
+
+drop policy if exists payslips_read_authorized on public.payslips;
+create policy payslips_read_authorized on public.payslips for select to authenticated
+  using (
+    exists (select 1 from public.platform_admins pa where pa.id = auth.uid())
+    or exists (
+      select 1 from public.admin_users au
+      where au.id = auth.uid() and au.employer_id = payslips.employer_id
+    )
+  );
+
+drop policy if exists shifts_read_authorized on public.shifts;
+create policy shifts_read_authorized on public.shifts for select to authenticated
+  using (
+    exists (select 1 from public.platform_admins pa where pa.id = auth.uid())
+    or exists (
+      select 1
+      from public.employees e
+      join public.admin_users au on au.employer_id = e.employer_id
+      where e.id = shifts.employee_id and au.id = auth.uid()
+    )
+  );
+
+drop policy if exists time_entries_read_authorized on public.time_entries;
+create policy time_entries_read_authorized on public.time_entries for select to authenticated
+  using (
+    exists (select 1 from public.platform_admins pa where pa.id = auth.uid())
+    or exists (
+      select 1
+      from public.employees e
+      join public.admin_users au on au.employer_id = e.employer_id
+      where e.id = time_entries.employee_id and au.id = auth.uid()
+    )
+  );
