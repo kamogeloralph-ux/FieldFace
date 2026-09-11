@@ -44,10 +44,9 @@ export default function EmployeePayslipPage() {
     setSharingId(id);
     setError(null);
     try {
-      const url = await getUrl(id);
-      // Do not fetch the R2 URL from the browser: R2 may not expose CORS
-      // headers, which causes a misleading "failed to fetch" error. Sharing
-      // the signed URL directly works in WhatsApp, email, and native share.
+      // Keep the private R2 URL out of messages. The app resolves this short
+      // bearer link server-side and redirects to the temporary PDF URL.
+      const url = `${window.location.origin}/share/payslip/${id}`;
       if (navigator.share) {
         await navigator.share({ title: "My FieldFace payslip", text: "My FieldFace payslip", url });
       } else {

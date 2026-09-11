@@ -17,18 +17,12 @@ export default function PayslipsPage() {
   });
 
   async function share(payslipId: string, employeeName: string) {
-    const res = await utils.client.payslips.downloadUrl.query({ payslipId });
-    if (!res?.url) return;
+    const url = `${window.location.origin}/share/payslip/${payslipId}`;
     try {
-      const response = await fetch(res.url);
-      if (!response.ok) throw new Error("Payslip file is unavailable. Generate it again first.");
-      const file = new File([await response.blob()], `${employeeName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-payslip.pdf`, { type: "application/pdf" });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: `${employeeName} payslip`, text: `FieldFace payslip for ${employeeName}` });
-      } else if (navigator.share) {
-        await navigator.share({ title: `${employeeName} payslip`, text: `FieldFace payslip for ${employeeName}`, url: res.url });
+      if (navigator.share) {
+        await navigator.share({ title: `${employeeName} payslip`, text: `FieldFace payslip for ${employeeName}`, url });
       } else {
-        await navigator.clipboard.writeText(res.url);
+        await navigator.clipboard.writeText(url);
         alert("Payslip link copied to the clipboard.");
       }
     } catch (error) {
