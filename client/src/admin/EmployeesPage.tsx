@@ -33,11 +33,21 @@ export default function EmployeesPage() {
       alert("Generate this month's payslip first.");
       return;
     }
-    const shareData = { title: `${employeeName} payslip`, text: `FieldFace payslip for ${employeeName}`, url: result.url };
-    if (navigator.share) await navigator.share(shareData).catch(() => {});
-    else {
-      await navigator.clipboard.writeText(result.url);
-      alert("Payslip link copied to the clipboard.");
+    try {
+      const response = await fetch(result.url);
+      if (!response.ok) throw new Error("Payslip file is unavailable. Generate it again first.");
+      const file = new File([await response.blob()], `${employeeName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-payslip.pdf`, { type: "application/pdf" });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `${employeeName} payslip`, text: `FieldFace payslip for ${employeeName}` });
+      } else if (navigator.share) {
+        await navigator.share({ title: `${employeeName} payslip`, text: `FieldFace payslip for ${employeeName}`, url: result.url });
+      } else {
+        await navigator.clipboard.writeText(result.url);
+        alert("Payslip link copied to the clipboard.");
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      alert(error instanceof Error ? error.message : "Could not share the payslip.");
     }
   }
 
