@@ -29,30 +29,26 @@ export default function EmployeePayslipPage() {
     setError(null);
     try {
       const url = await getUrl(id);
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Could not download the payslip.");
-      const blobUrl = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
-      link.href = blobUrl;
+      link.href = url;
       link.download = fileName(year, month);
+      link.target = "_blank";
+      link.rel = "noopener";
       link.click();
-      URL.revokeObjectURL(blobUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not download the payslip.");
     }
   }
 
-  async function share(id: string, year: number, month: number) {
+  async function share(id: string) {
     setSharingId(id);
     setError(null);
     try {
       const url = await getUrl(id);
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Could not load the payslip.");
-      const file = new File([await response.blob()], fileName(year, month), { type: "application/pdf" });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "My FieldFace payslip", text: "My FieldFace payslip" });
-      } else if (navigator.share) {
+      // Do not fetch the R2 URL from the browser: R2 may not expose CORS
+      // headers, which causes a misleading "failed to fetch" error. Sharing
+      // the signed URL directly works in WhatsApp, email, and native share.
+      if (navigator.share) {
         await navigator.share({ title: "My FieldFace payslip", text: "My FieldFace payslip", url });
       } else {
         await navigator.clipboard.writeText(url);
@@ -111,7 +107,7 @@ export default function EmployeePayslipPage() {
             <p className="text-sm text-slate-500 mt-1">{Number(p.totalHours).toFixed(2)} hours · Net R{Number(p.netPay).toFixed(2)}</p>
             <div className="flex gap-2 mt-3">
               <button className="btn-secondary flex-1" onClick={() => download(p.id, p.periodYear, p.periodMonth)}>Download</button>
-              <button className="btn-primary flex-1" disabled={sharingId === p.id} onClick={() => share(p.id, p.periodYear, p.periodMonth)}>
+              <button className="btn-primary flex-1" disabled={sharingId === p.id} onClick={() => share(p.id)}>
                 {sharingId === p.id ? "Sharing..." : "Share"}
               </button>
             </div>

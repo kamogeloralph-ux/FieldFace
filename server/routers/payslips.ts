@@ -119,7 +119,7 @@ export const payslipsRouter = router({
       .from(payslips)
       .where(and(eq(payslips.id, input.payslipId), eq(payslips.employeeId, ctx.employee.employeeId)));
     if (!payslip) return null;
-    return { url: await signedUrl("payslips", payslip.pdfPath, 300) };
+    return { url: await signedUrl("payslips", payslip.pdfPath, 3600) };
   }),
 
   shareUrl: adminProcedure
