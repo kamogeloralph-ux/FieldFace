@@ -74,6 +74,8 @@ export const employees = pgTable("employees", {
   hourlyRateWeekday: numeric("hourly_rate_weekday", { precision: 10, scale: 2 }).notNull(),
   hourlyRateWeekend: numeric("hourly_rate_weekend", { precision: 10, scale: 2 }).notNull(),
   active: boolean("active").notNull().default(true),
+  selfServiceGenCount: integer("self_service_gen_count").notNull().default(0),
+  selfServiceGenPeriod: text("self_service_gen_period"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
