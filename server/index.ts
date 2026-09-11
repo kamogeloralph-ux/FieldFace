@@ -43,7 +43,7 @@ if (process.env.NODE_ENV === "production") {
   // Serve the owner-console entrypoint directly. It has its own browser root
   // and never falls through to the employee application.
   app.get("/admin.html", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
-  app.get("/admin.html/*", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
+  app.get(/^\/admin\.html(?:\/.*)?$/, (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
 
   app.use(express.static(distPath));
 
