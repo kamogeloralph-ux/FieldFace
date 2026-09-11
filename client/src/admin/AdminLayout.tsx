@@ -2,11 +2,11 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 
 const NAV = [
-  { to: "/", label: "Daily Report", end: true },
-  { to: "/employees", label: "Employees" },
-  { to: "/sites", label: "Sites" },
-  { to: "/payslips", label: "Payslips" },
-  { to: "/employer", label: "Employer Settings" },
+  { to: "/company", label: "Daily Report", end: true },
+  { to: "/company/employees", label: "Employees" },
+  { to: "/company/sites", label: "Sites" },
+  { to: "/company/payslips", label: "Payslips" },
+  { to: "/company/employer", label: "Employer Settings" },
 ];
 
 export default function AdminLayout() {
@@ -41,7 +41,7 @@ export default function AdminLayout() {
           <p className="text-xs text-emerald-300 mb-2">{me.data?.fullName}</p>
           <button
             className="text-sm text-emerald-200 underline"
-            onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login") })}
+            onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/company/login") })}
           >
             Log out
           </button>

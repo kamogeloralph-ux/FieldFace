@@ -45,15 +45,18 @@ const FEATURES = [
 
 export default function WelcomeScreen() {
   return (
-    <div className="min-h-screen bg-slate-50 px-6 py-10">
+    <div className="app-wallpaper min-h-screen px-6 py-10">
       <div className="max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
-          <img src="/fieldface-logo.png" alt="Fieldface" className="h-8 w-auto" />
+          <div className="brand-lockup">
+            <img src="/fieldface-logo.png" alt="Fieldface" className="h-8 w-auto" />
+          </div>
         </div>
 
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 welcome-hero">
+          <p className="eyebrow mb-3">FIELD OPERATIONS, SIMPLIFIED</p>
           <h1 className="text-3xl font-bold text-slate-900">Built for the field.</h1>
-          <p className="text-slate-500 mt-2">
+          <p className="text-slate-600 mt-2">
             Clock in with a selfie at the site, and let the hours, reports and payslips take care of themselves.
           </p>
         </div>

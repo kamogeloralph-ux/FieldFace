@@ -37,7 +37,8 @@ export const timeEntriesRouter = router({
       .orderBy(desc(timeEntries.occurredAt))
       .limit(1);
 
-    const nextAction = !lastEntry || lastEntry.entryType === "clock_out" ? "clock_in" : "clock_out";
+    const nextAction: "clock_in" | "clock_out" =
+      !lastEntry || lastEntry.entryType === "clock_out" ? "clock_in" : "clock_out";
 
     return { site, nextAction, lastEntryAt: lastEntry?.occurredAt ?? null };
   }),

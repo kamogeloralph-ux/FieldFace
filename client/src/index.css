@@ -9,6 +9,105 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.app-wallpaper,
+.admin-wallpaper {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.app-wallpaper {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.18), transparent 30%),
+    radial-gradient(circle at 92% 34%, rgba(14, 116, 144, 0.12), transparent 28%),
+    linear-gradient(145deg, #f8fafc 0%, #ecfdf5 52%, #f0fdfa 100%);
+}
+
+.app-wallpaper::before,
+.admin-wallpaper::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: 0.42;
+  background-image: linear-gradient(rgba(15, 118, 110, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 118, 110, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+
+.app-wallpaper::after,
+.admin-wallpaper::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 22rem;
+  height: 22rem;
+  right: -9rem;
+  top: 12%;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.18);
+  filter: blur(4px);
+}
+
+.admin-wallpaper {
+  background:
+    radial-gradient(circle at 15% 18%, rgba(52, 211, 153, 0.24), transparent 28%),
+    radial-gradient(circle at 90% 80%, rgba(45, 212, 191, 0.16), transparent 30%),
+    linear-gradient(135deg, #052e2b 0%, #064e3b 48%, #083344 100%);
+}
+
+.admin-wallpaper::before {
+  opacity: 0.24;
+  background-image: linear-gradient(rgba(167, 243, 208, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 243, 208, 0.14) 1px, transparent 1px);
+}
+
+.admin-wallpaper::after {
+  right: -7rem;
+  top: auto;
+  bottom: -8rem;
+  background: rgba(45, 212, 191, 0.2);
+}
+
+.brand-lockup {
+  padding: 0.65rem 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 12px 30px rgba(15, 118, 110, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.welcome-hero {
+  padding: 1.25rem 1rem 0.75rem;
+}
+
+.eyebrow {
+  color: #047857;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.eyebrow-light {
+  color: #6ee7b7;
+}
+
+.login-panel {
+  position: relative;
+  z-index: 1;
+}
+
+.login-form-card {
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 70px rgba(2, 44, 34, 0.28);
+  backdrop-filter: blur(18px);
+}
+
 .btn-primary {
   @apply w-full rounded-xl bg-emerald-700 text-white font-semibold py-3.5 text-base active:scale-[0.98] transition disabled:opacity-50 disabled:active:scale-100;
 }
