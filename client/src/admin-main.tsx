@@ -8,12 +8,13 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 const trpcClient = makeTrpcClient();
+const ownerConsoleBase = window.location.pathname.startsWith("/admin.html") ? "/admin.html" : "/admin";
 
 ReactDOM.createRoot(document.getElementById("admin-root")!).render(
   <React.StrictMode>
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter basename="/admin">
+        <BrowserRouter basename={ownerConsoleBase}>
           <PlatformApp />
         </BrowserRouter>
       </QueryClientProvider>

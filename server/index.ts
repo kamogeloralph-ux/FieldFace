@@ -40,14 +40,13 @@ if (process.env.NODE_ENV === "production") {
   const path = await import("node:path");
   const distPath = path.resolve(import.meta.dirname, "..", "dist", "public");
 
-  // Redirect the legacy filename before express.static can serve admin.html
-  // directly. The owner console must always enter through the /admin router
-  // and must never fall through to the employee application.
-  app.get("/admin.html", (_req, res) => res.redirect(301, "/admin/login"));
+  // Serve the owner-console entrypoint directly. It has its own browser root
+  // and never falls through to the employee application.
+  app.get("/admin.html", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
 
   app.use(express.static(distPath));
 
-  // The platform-owner console is built from admin.html but is exposed at /admin.
+  // The platform-owner console is available at both /admin.html and /admin.
   app.get("/admin", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
   app.get("/admin/*", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
 
