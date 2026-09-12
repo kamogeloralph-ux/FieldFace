@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 import { getCurrentPosition } from "../lib/geolocation";
 import { cacheEmployeeStatus, getCachedEmployeeStatus, queueClock, syncQueuedClocks } from "../lib/offlineClock";
+import EmployeeMenu from "./EmployeeMenu";
 
 type Stage = "idle" | "camera" | "preview" | "submitting" | "done";
 
@@ -152,22 +153,14 @@ export default function ClockScreen() {
           <p className="text-xs text-slate-500">Logged in as</p>
           <p className="font-semibold text-slate-800">{me.data?.fullName}</p>
         </div>
-        <div className="flex gap-2">
-          <button className="text-sm text-slate-500 underline" onClick={() => navigate("/history")}>
-            History
-          </button>
-          <button className="text-sm text-slate-500 underline" onClick={() => navigate("/payslips")}>
-            Payslips
-          </button>
-          <button className="text-sm text-slate-500 underline" onClick={() => navigate("/leave")}>
-            Leave
-          </button>
+        <div className="flex items-center gap-2">
           <button
             className="text-sm text-slate-500 underline"
             onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/") })}
           >
             Log out
           </button>
+          <EmployeeMenu />
         </div>
       </header>
 

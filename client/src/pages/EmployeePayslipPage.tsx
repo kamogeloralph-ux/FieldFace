@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
+import EmployeeMenu from "./EmployeeMenu";
 
 function fileName(year: number, month: number) {
   return `fieldface-payslip-${year}-${String(month).padStart(2, "0")}.pdf`;
 }
 
 export default function EmployeePayslipPage() {
-  const navigate = useNavigate();
   const utils = trpc.useUtils();
   const payslips = trpc.payslips.myPayslips.useQuery();
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +32,7 @@ export default function EmployeePayslipPage() {
   return (
     <div className="app-wallpaper min-h-screen px-5 py-6">
       <div className="max-w-sm mx-auto">
-        <header className="flex items-center justify-between mb-5"><h1 className="text-xl font-bold text-slate-800">My payslips</h1><button className="text-sm text-slate-500 underline" onClick={() => navigate("/clock")}>Back</button></header>
+        <header className="flex items-center justify-between mb-5"><h1 className="text-xl font-bold text-slate-800">My payslips</h1><EmployeeMenu /></header>
         <div className="card mb-5"><p className="font-semibold text-slate-800">Management-issued payslips</p><p className="text-sm text-slate-500 mt-1">Payslips can only be generated and shared by management. You can download payslips once they are issued.</p></div>
         {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
         <div className="space-y-3">
