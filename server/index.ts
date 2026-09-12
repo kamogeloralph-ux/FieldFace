@@ -7,6 +7,9 @@ import { appRouter } from "./routers";
 import { createContext } from "./trpc";
 import { startPayslipCron } from "./cron";
 import { db, ensureProductionSchema } from "./db";
+import { payslips } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { signedUrl } from "./storage";
 
 const app = express();
 app.disable("x-powered-by");
@@ -49,6 +52,16 @@ app.get("/api/health", async (_req, res) => {
     res.json({ ok: true, database: "ok", now: new Date().toISOString() });
   } catch {
     res.status(503).json({ ok: false, database: "unavailable" });
+  }
+});
+
+app.get("/share/payslip/:id", async (req, res) => {
+  try {
+    const [payslip] = await db.select({ pdfPath: payslips.pdfPath }).from(payslips).where(eq(payslips.id, req.params.id)).limit(1);
+    if (!payslip) return res.status(404).send("Payslip not found.");
+    return res.redirect(302, await signedUrl("payslips", payslip.pdfPath, 300));
+  } catch {
+    return res.status(404).send("Payslip is unavailable.");
   }
 });
 
