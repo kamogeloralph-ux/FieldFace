@@ -67,23 +67,29 @@ app.get("/share/payslip/:id", async (req, res) => {
 
 if (process.env.NODE_ENV === "production") {
   const path = await import("node:path");
+  const fs = await import("node:fs/promises");
   const distPath = path.resolve(import.meta.dirname, "..", "dist", "public");
+  const runtimeConfigScript = `<script>window.__FIELDFACE_SUPABASE_URL__=${JSON.stringify(process.env.VITE_SUPABASE_URL || "")};window.__FIELDFACE_SUPABASE_ANON_KEY__=${JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || "")};</script>`;
+  const sendHtml = async (fileName: string, res: express.Response) => {
+    const html = await fs.readFile(path.join(distPath, fileName), "utf8");
+    res.type("html").send(html.replace("</head>", `${runtimeConfigScript}</head>`));
+  };
 
   // Serve the owner-console entrypoint directly. It has its own browser root
   // and never falls through to the employee application.
-  app.get("/admin.html", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
-  app.get(/^\/admin\.html(?:\/.*)?$/, (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
+  app.get("/admin.html", (_req, res) => { void sendHtml("admin.html", res); });
+  app.get(/^\/admin\.html(?:\/.*)?$/, (_req, res) => { void sendHtml("admin.html", res); });
 
   app.get("/sw.js", (_req, res) => { res.setHeader("Cache-Control", "no-store"); res.sendFile(path.join(distPath, "sw.js")); });
   app.use(express.static(distPath));
 
   // The platform-owner console is available at both /admin.html and /admin.
-  app.get("/admin", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
-  app.get("/admin/*", (_req, res) => res.sendFile(path.join(distPath, "admin.html")));
+  app.get("/admin", (_req, res) => { void sendHtml("admin.html", res); });
+  app.get("/admin/*", (_req, res) => { void sendHtml("admin.html", res); });
 
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api")) return next();
-    res.sendFile(path.join(distPath, "index.html"));
+    void sendHtml("index.html", res);
   });
 }
 
