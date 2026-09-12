@@ -45,8 +45,13 @@ export async function verifyPin(pin: string, hash: string): Promise<boolean> {
 }
 
 export function issueEmployeeSession(res: Response, session: EmployeeSession) {
-  const token = jwt.sign(session, SESSION_SECRET!, { expiresIn: "12h" });
-  res.cookie(EMPLOYEE_COOKIE_NAME, token, COOKIE_OPTIONS);
+  issueEmployeeSessionWithPreference(res, session, false);
+}
+
+export function issueEmployeeSessionWithPreference(res: Response, session: EmployeeSession, rememberMe: boolean) {
+  const maxAge = rememberMe ? 1000 * 60 * 60 * 24 * 30 : 1000 * 60 * 60 * 12;
+  const token = jwt.sign(session, SESSION_SECRET!, { expiresIn: rememberMe ? "30d" : "12h" });
+  res.cookie(EMPLOYEE_COOKIE_NAME, token, { ...COOKIE_OPTIONS, maxAge });
 }
 
 export function readEmployeeSession(req: Request): EmployeeSession | null {

@@ -7,7 +7,7 @@ import {
   clearAdminSession,
   clearEmployeeSession,
   issueAdminSession,
-  issueEmployeeSession,
+  issueEmployeeSessionWithPreference,
   verifyPin,
   verifySupabaseAccessToken,
 } from "../auth";
@@ -16,7 +16,7 @@ import { TRPCError } from "@trpc/server";
 export const authRouter = router({
   // --- Employee (mobile clocking app) ---
   employeeLogin: publicProcedure
-    .input(z.object({ employeeCode: z.string().min(1), pin: z.string().min(4).max(8) }))
+    .input(z.object({ employeeCode: z.string().min(1), pin: z.string().min(4).max(8), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
       const [employee] = await db
         .select()
@@ -28,11 +28,11 @@ export const authRouter = router({
       const pinOk = await verifyPin(input.pin, employee.pinHash);
       if (!pinOk) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
 
-      issueEmployeeSession(ctx.res, {
+      issueEmployeeSessionWithPreference(ctx.res, {
         employeeId: employee.id,
         employerId: employee.employerId,
         siteId: employee.siteId,
-      });
+      }, input.rememberMe);
 
       return {
         id: employee.id,

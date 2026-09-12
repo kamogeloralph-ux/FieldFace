@@ -1,13 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 
 export default function EmployeeLogin() {
   const [employeeCode, setEmployeeCode] = useState("");
   const [pin, setPin] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const utils = trpc.useUtils();
+  const me = trpc.auth.employeeMe.useQuery();
+
+  useEffect(() => {
+    if (me.isSuccess && me.data) navigate("/clock", { replace: true });
+  }, [me.isSuccess, me.data, navigate]);
 
   const login = trpc.auth.employeeLogin.useMutation({
     onSuccess: async () => {
@@ -32,7 +38,7 @@ export default function EmployeeLogin() {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          login.mutate({ employeeCode: employeeCode.trim(), pin });
+          login.mutate({ employeeCode: employeeCode.trim(), pin, rememberMe });
         }}
       >
         <div>
@@ -57,6 +63,10 @@ export default function EmployeeLogin() {
             required
           />
         </div>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 accent-emerald-700" />
+          Stay signed in on this device for 30 days
+        </label>
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <button className="btn-primary" type="submit" disabled={login.isPending}>
           {login.isPending ? "Checking..." : "Log in"}
