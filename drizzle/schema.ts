@@ -104,6 +104,20 @@ export const companyDeductionEmployees = pgTable("company_deduction_employees", 
   pk: primaryKey({ columns: [t.deductionId, t.employeeId] }),
 }));
 
+export const leaveRequests = pgTable("leave_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),
+  employeeId: uuid("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status", { enum: ["pending", "approved", "declined"] }).notNull().default("pending"),
+  managerNote: text("manager_note"),
+  reviewedBy: uuid("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // One row per clock-in or clock-out tap, with the evidence captured at that moment.
 export const timeEntries = pgTable("time_entries", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -31,6 +31,8 @@ export async function ensureProductionSchema() {
     `alter table public.employers add column if not exists schedule_name text`,
     `alter table public.employers add column if not exists schedule_content_type text`,
     `alter table public.employers add column if not exists schedule_updated_at timestamptz`,
+    `create table if not exists public.leave_requests (id uuid primary key default gen_random_uuid(), employer_id uuid not null references public.employers(id) on delete cascade, employee_id uuid not null references public.employees(id) on delete cascade, start_date date not null, end_date date not null, reason text not null, status text not null default 'pending', manager_note text, reviewed_by uuid, reviewed_at timestamptz, created_at timestamptz not null default now())`,
+    `create index if not exists leave_requests_employer_status_idx on public.leave_requests(employer_id, status, start_date)`,
     `alter table public.employees add column if not exists tax_number text`,
     `alter table public.time_entries add column if not exists clock_action_id uuid`,
     `alter table public.time_entries add column if not exists captured_at timestamptz`,
