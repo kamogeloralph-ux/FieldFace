@@ -3,7 +3,7 @@ import { useState } from "react";
 import { trpc } from "../lib/trpc";
 
 const NAV = [
-  { to: "/company", label: "Daily Report", end: true },
+  { to: "/company", label: "Home", end: true },
   { to: "/company/employees", label: "Employees" },
   { to: "/company/sites", label: "Sites" },
   { to: "/company/payslips", label: "Payslips" },

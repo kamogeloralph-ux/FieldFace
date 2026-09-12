@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const LINKS = [
+  ["/clock", "Home"],
   ["/schedule", "Schedule"],
   ["/history", "History"],
   ["/payslips", "Payslips"],
