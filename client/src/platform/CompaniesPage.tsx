@@ -38,12 +38,14 @@ export default function CompaniesPage() {
   const companies = trpc.platform.listCompanies.useQuery();
   const createCompany = trpc.platform.createCompany.useMutation({ onSuccess: () => utils.platform.listCompanies.invalidate() });
   const updateCompany = trpc.platform.updateCompany.useMutation({ onSuccess: () => utils.platform.listCompanies.invalidate() });
+  const mergeCompanyData = trpc.platform.mergeCompanyData.useMutation({ onSuccess: () => { utils.platform.listCompanies.invalidate(); employees.refetch(); } });
   const deleteCompany = trpc.platform.deleteCompany.useMutation({ onSuccess: () => utils.platform.listCompanies.invalidate() });
   const impersonate = trpc.platform.impersonateCompany.useMutation();
   const [newName, setNewName] = useState("");
   const [selected, setSelected] = useState<Company | null>(null);
   const [form, setForm] = useState<CompanyForm>(emptyForm);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [mergeSourceId, setMergeSourceId] = useState("");
   const employees = trpc.platform.listCompanyEmployees.useQuery(
     { employerId: selected?.id ?? "00000000-0000-0000-0000-000000000000" },
     { enabled: !!selected },
@@ -129,6 +131,7 @@ export default function CompaniesPage() {
         <div className="fixed inset-0 z-50 bg-black/30 p-4 overflow-y-auto" onClick={() => setSelected(null)}>
           <div className="card max-w-2xl mx-auto mt-8 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center"><div><h2 className="text-lg font-bold text-slate-800">Administrator edits</h2><p className="text-xs text-slate-500">Only the platform administrator can save these settings.</p></div><button className="text-slate-500 text-xl" onClick={() => setSelected(null)}>×</button></div>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2"><p className="text-sm font-semibold text-amber-900">Company data appears under another record?</p><p className="text-xs text-amber-800">Merge sites, employees, payslips, and management users from a duplicate company record into this one. The source company is kept for audit purposes.</p><div className="flex flex-col sm:flex-row gap-2"><select className="input-field flex-1" value={mergeSourceId} onChange={(e) => setMergeSourceId(e.target.value)}><option value="">Select duplicate company...</option>{companies.data?.filter((c) => c.id !== selected.id).map((c) => <option key={c.id} value={c.id}>{c.name} · {c.employeeCount} employees · {c.siteCount} sites</option>)}</select><button type="button" className="btn-secondary w-auto px-3" disabled={!mergeSourceId || mergeCompanyData.isPending} onClick={async () => { if (confirm("Move the selected company's sites, employees, payslips, and management users into this company?")) { await mergeCompanyData.mutateAsync({ targetEmployerId: selected.id, sourceEmployerId: mergeSourceId }); setMergeSourceId(""); } }}>{mergeCompanyData.isPending ? "Merging..." : "Merge data"}</button></div>{mergeCompanyData.error && <p className="text-xs text-red-600">{mergeCompanyData.error.message}</p>}</div>
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Company details</p>
               <input className="input-field" placeholder="Company name" value={form.name} onChange={(e) => setField("name", e.target.value)} />

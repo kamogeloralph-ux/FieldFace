@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../db";
-import { employees, employers, platformAdmins, sites } from "../../drizzle/schema";
+import { adminUsers, employees, employers, payslips, platformAdmins, sites } from "../../drizzle/schema";
 import { publicProcedure, platformProcedure, router } from "../trpc";
 import {
   clearPlatformSession,
@@ -94,6 +94,23 @@ export const platformRouter = router({
       if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
       await writeAudit({ actorType: "platform_admin", actorId: ctx.platform.platformAdminId, employerId: id, action: "company.updated", entityType: "employer", entityId: id, metadata: { fields: Object.keys(values) } });
       return updated;
+    }),
+
+  mergeCompanyData: platformProcedure
+    .input(z.object({ targetEmployerId: z.string().uuid(), sourceEmployerId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.targetEmployerId === input.sourceEmployerId) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose two different companies." });
+      return db.transaction(async (tx) => {
+        const [target] = await tx.select().from(employers).where(eq(employers.id, input.targetEmployerId));
+        const [source] = await tx.select().from(employers).where(eq(employers.id, input.sourceEmployerId));
+        if (!target || !source) throw new TRPCError({ code: "NOT_FOUND", message: "Company record not found." });
+        await tx.update(sites).set({ employerId: target.id }).where(eq(sites.employerId, source.id));
+        await tx.update(employees).set({ employerId: target.id }).where(eq(employees.employerId, source.id));
+        await tx.update(payslips).set({ employerId: target.id }).where(eq(payslips.employerId, source.id));
+        await tx.update(adminUsers).set({ employerId: target.id }).where(eq(adminUsers.employerId, source.id));
+        await writeAudit({ actorType: "platform_admin", actorId: ctx.platform.platformAdminId, employerId: target.id, action: "company.data_merged", entityType: "employer", entityId: target.id, metadata: { sourceEmployerId: source.id } });
+        return { success: true as const };
+      });
     }),
 
   listCompanyEmployees: platformProcedure
