@@ -187,7 +187,7 @@ export default function ClockScreen() {
               {detailsOpen && !status.data.site.referencePhotoUrl && <p className="px-4 pb-3 text-sm text-slate-500">Stand at the designated site before taking your selfie.</p>}
             </div>
           )}
-          {schedule.data && <div className="card flex items-center justify-between gap-3"><div className="min-w-0 flex-1"><p className="text-xs text-slate-500">Company schedule</p><p className="font-semibold text-slate-800 truncate" title={schedule.data.name}>{schedule.data.name}</p></div><button type="button" onClick={() => navigate("/schedule")} className="btn-secondary w-auto shrink-0 px-3 py-2 text-sm">View</button></div>}
+          {schedule.data && <div className="card space-y-3"><div className="min-w-0"><p className="text-xs text-slate-500">Company schedule</p><p className="font-semibold text-slate-800 break-words" title={schedule.data.name}>{schedule.data.name}</p><p className="text-xs text-slate-500 mt-1">Open the latest schedule issued by management.</p></div><button type="button" onClick={() => navigate("/schedule")} className="btn-secondary w-full px-3 py-2 text-sm">View schedule</button></div>}
         </div>
       )}
 
