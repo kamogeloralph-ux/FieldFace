@@ -1,4 +1,4 @@
-const CACHE_NAME = "fieldface-shell-v3";
+const CACHE_NAME = "fieldface-shell-v4";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/fieldface-logo.png", "/fieldface-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -22,12 +22,9 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request).then((response) => {
-        if (response.ok) void caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
-        return response;
-      }).catch(() => cached || Response.error());
-      return cached || network;
-    }),
+    fetch(request).then((response) => {
+      if (response.ok) void caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+      return response;
+    }).catch(() => caches.match(request).then((cached) => cached || Response.error())),
   );
 });
