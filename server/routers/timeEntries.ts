@@ -24,6 +24,7 @@ export const timeEntriesRouter = router({
           latitude: s.latitude,
           longitude: s.longitude,
           radiusMeters: s.radiusMeters,
+          active: s.active,
           referencePhotoUrl: s.referencePhotoUrl ? await signedUrl("site-photos", s.referencePhotoUrl, 3600) : null,
         };
       }
@@ -53,6 +54,7 @@ export const timeEntriesRouter = router({
         if (!employee.siteId) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "No worksite assigned yet — ask your supervisor." });
         const [site] = await tx.select().from(sites).where(eq(sites.id, employee.siteId));
         if (!site) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Assigned worksite not found." });
+        if (!site.active) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Your assigned worksite is inactive. Ask management to activate it before clocking in or out." });
         const [employer] = await tx.select({ timezone: employers.timezone }).from(employers).where(eq(employers.id, employee.employerId));
 
         const [alreadyRecorded] = await tx.select().from(timeEntries).where(and(eq(timeEntries.employeeId, employee.id), eq(timeEntries.clockActionId, input.actionId)));

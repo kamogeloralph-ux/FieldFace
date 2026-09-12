@@ -175,8 +175,8 @@ export default function ClockScreen() {
 
       {stage === "idle" && (
         <div className="space-y-3">
-          <button className="btn-primary text-lg py-4" onClick={startCamera}>
-            {actionLabel} — Take Selfie
+          <button className="btn-primary text-lg py-4" onClick={startCamera} disabled={status.data?.site?.active === false}>
+            {status.data?.site?.active === false ? "Worksite inactive" : `${actionLabel} — Take Selfie`}
           </button>
           {status.data?.site && (
             <div className="card !p-0 overflow-hidden">
@@ -185,7 +185,7 @@ export default function ClockScreen() {
                 onClick={() => setDetailsOpen((open) => !open)}
                 aria-expanded={detailsOpen}
               >
-                <span><span className="text-xs text-slate-500 block">Designated area</span><span className="font-semibold text-slate-800">{status.data.site.name}</span></span>
+                <span><span className="text-xs text-slate-500 block">Designated area</span><span className="font-semibold text-slate-800">{status.data.site.name}</span>{status.data.site.active === false && <span className="text-xs text-red-600 block mt-1">Inactive — ask management to activate this site</span>}</span>
                 <span className="text-slate-400 text-xl">{detailsOpen ? "−" : "+"}</span>
               </button>
               {detailsOpen && status.data.site.referencePhotoUrl && (

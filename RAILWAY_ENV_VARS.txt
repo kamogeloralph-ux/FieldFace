@@ -1,9 +1,10 @@
-Add these as Environment Variables in your Railway service (Settings -> Variables).
-Do NOT commit these to GitHub - they're secrets, which is why they aren't in this zip.
+Add these variables in Railway service settings. Do not commit real credentials to GitHub.
 
-CF_ACCOUNT_ID=33d3042ef8eb068461919506f3d45e06
-R2_ACCESS_KEY_ID=5aeab229cf2586958975ee9db849bb95
-R2_SECRET_ACCESS_KEY=eb0dc9b0d76f0339a952ff8ba5e83924d8bfc3e2e3a8dd4288eb8d7e043b2a2f
+CF_ACCOUNT_ID=your-cloudflare-account-id
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
 R2_BUCKET_SELFIES=fieldface-selfies
 R2_BUCKET_SITE_PHOTOS=fieldface-site-photos
 R2_BUCKET_PAYSLIPS=fieldface-payslips
+# Optional. If omitted, schedules reuse R2_BUCKET_SITE_PHOTOS.
+R2_BUCKET_SCHEDULES=fieldface-schedules

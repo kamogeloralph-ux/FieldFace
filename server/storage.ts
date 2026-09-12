@@ -36,7 +36,9 @@ const BUCKETS = {
   selfies: process.env.R2_BUCKET_SELFIES || "fieldface-selfies",
   "site-photos": process.env.R2_BUCKET_SITE_PHOTOS || "fieldface-site-photos",
   payslips: process.env.R2_BUCKET_PAYSLIPS || "fieldface-payslips",
-  schedules: process.env.R2_BUCKET_SCHEDULES || "fieldface-schedules",
+  // Reuse the existing authorized bucket unless a dedicated schedule bucket
+  // has explicitly been provisioned and granted to the R2 key.
+  schedules: process.env.R2_BUCKET_SCHEDULES || process.env.R2_BUCKET_SITE_PHOTOS || "fieldface-site-photos",
 } as const;
 
 /** Decode a `data:image/jpeg;base64,....` string into a Buffer + content type. */
