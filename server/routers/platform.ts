@@ -10,6 +10,7 @@ import {
   verifySupabaseAccessToken,
 } from "../auth";
 import { TRPCError } from "@trpc/server";
+import { writeAudit } from "../audit";
 
 export const platformRouter = router({
   login: publicProcedure
@@ -84,13 +85,14 @@ export const platformRouter = router({
       uifEmployeeRate: z.number().min(0).max(100).optional(),
       uifEmployerRate: z.number().min(0).max(100).optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, uifEmployeeRate, uifEmployerRate, ...rest } = input;
       const values: Record<string, unknown> = { ...rest };
       if (typeof uifEmployeeRate === "number") values.uifEmployeeRate = uifEmployeeRate.toString();
       if (typeof uifEmployerRate === "number") values.uifEmployerRate = uifEmployerRate.toString();
       const [updated] = await db.update(employers).set(values).where(eq(employers.id, id)).returning();
       if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
+      await writeAudit({ actorType: "platform_admin", actorId: ctx.platform.platformAdminId, employerId: id, action: "company.updated", entityType: "employer", entityId: id, metadata: { fields: Object.keys(values) } });
       return updated;
     }),
 

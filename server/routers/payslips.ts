@@ -2,15 +2,30 @@ import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { employees, employers, payslips } from "../../drizzle/schema";
-import { adminProcedure, employeeProcedure, router } from "../trpc";
+import { adminProcedure, employeeProcedure, ownerProcedure, router } from "../trpc";
 import { generatePayslipForEmployee, generatePayslipsForEmployer } from "../payslipGeneration";
 import { signedUrl } from "../storage";
 import { TRPCError } from "@trpc/server";
+import { writeAudit } from "../audit";
 
 export const payslipsRouter = router({
+  finalizePeriod: ownerProcedure
+    .input(z.object({ year: z.number().int(), month: z.number().int().min(1).max(12) }))
+    .mutation(async ({ ctx, input }) => {
+      const now = new Date();
+      const [result] = await db.update(payslips)
+        .set({ status: "finalized", finalizedAt: now, finalizedBy: ctx.admin.adminUserId })
+        .where(and(eq(payslips.employerId, ctx.admin.employerId), eq(payslips.periodYear, input.year), eq(payslips.periodMonth, input.month)))
+        .returning({ id: payslips.id });
+      if (result) await writeAudit({ actorType: "admin", actorId: ctx.admin.adminUserId, employerId: ctx.admin.employerId, action: "payroll.finalized", entityType: "payroll_period", metadata: { year: input.year, month: input.month } });
+      return { finalized: result ? true : false };
+    }),
+
   generateForMonth: adminProcedure
     .input(z.object({ year: z.number().int(), month: z.number().int().min(1).max(12) }))
     .mutation(async ({ ctx, input }) => {
+      const locked = await db.select({ id: payslips.id }).from(payslips).where(and(eq(payslips.employerId, ctx.admin.employerId), eq(payslips.periodYear, input.year), eq(payslips.periodMonth, input.month), eq(payslips.status, "finalized"))).limit(1);
+      if (locked.length) throw new TRPCError({ code: "FORBIDDEN", message: "This payroll period is finalized and cannot be regenerated." });
       const results = await generatePayslipsForEmployer(ctx.admin.employerId, input.year, input.month);
       return { generated: results.length };
     }),
@@ -18,6 +33,8 @@ export const payslipsRouter = router({
   generateForEmployee: adminProcedure
     .input(z.object({ employeeId: z.string().uuid(), year: z.number().int(), month: z.number().int().min(1).max(12) }))
     .mutation(async ({ ctx, input }) => {
+      const locked = await db.select({ id: payslips.id }).from(payslips).where(and(eq(payslips.employerId, ctx.admin.employerId), eq(payslips.periodYear, input.year), eq(payslips.periodMonth, input.month), eq(payslips.status, "finalized"))).limit(1);
+      if (locked.length) throw new TRPCError({ code: "FORBIDDEN", message: "This payroll period is finalized and cannot be regenerated." });
       const [employee] = await db
         .select()
         .from(employees)

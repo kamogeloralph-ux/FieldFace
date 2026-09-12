@@ -23,6 +23,7 @@ export const employers = pgTable("employers", {
   uifEnabled: boolean("uif_enabled").notNull().default(false),
   uifEmployeeRate: numeric("uif_employee_rate", { precision: 5, scale: 2 }).notNull().default("1.00"),
   uifEmployerRate: numeric("uif_employer_rate", { precision: 5, scale: 2 }).notNull().default("1.00"),
+  timezone: text("timezone").notNull().default("Africa/Johannesburg"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -92,6 +93,9 @@ export const timeEntries = pgTable("time_entries", {
   distanceMeters: doublePrecision("distance_meters").notNull(),
   withinGeofence: boolean("within_geofence").notNull(),
   gpsAccuracyMeters: doublePrecision("gps_accuracy_meters"),
+  clockActionId: uuid("clock_action_id"),
+  capturedAt: timestamp("captured_at", { withTimezone: true }),
+  syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -129,6 +133,21 @@ export const payslips = pgTable("payslips", {
   netPay: numeric("net_pay", { precision: 10, scale: 2 }).notNull(),
   pdfPath: text("pdf_path").notNull(),
   generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),
+  status: text("status", { enum: ["draft", "finalized"] }).notNull().default("draft"),
+  finalizedAt: timestamp("finalized_at", { withTimezone: true }),
+  finalizedBy: uuid("finalized_by"),
 }, (t) => ({
   uniquePeriod: sql`UNIQUE (${t.employeeId}, ${t.periodYear}, ${t.periodMonth})`,
 }));
+
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  actorType: text("actor_type").notNull(),
+  actorId: uuid("actor_id"),
+  employerId: uuid("employer_id").references(() => employers.id, { onDelete: "set null" }),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: uuid("entity_id"),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

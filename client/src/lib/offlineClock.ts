@@ -1,4 +1,6 @@
 export type OfflineClockPayload = {
+  actionId: string;
+  capturedAt: string;
   entryType: "clock_in" | "clock_out";
   selfieBase64: string;
   latitude: number;

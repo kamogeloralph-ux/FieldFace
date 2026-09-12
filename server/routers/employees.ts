@@ -5,6 +5,7 @@ import { employees } from "../../drizzle/schema";
 import { adminProcedure, platformProcedure, router } from "../trpc";
 import { hashPin } from "../auth";
 import { TRPCError } from "@trpc/server";
+import { writeAudit } from "../audit";
 
 const employeeBase = {
   fullName: z.string().min(1),
@@ -111,7 +112,7 @@ export const employeesRouter = router({
       hourlyRateWeekday: z.number().min(0),
       hourlyRateWeekend: z.number().min(0),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const [updated] = await db.update(employees)
         .set({
           hourlyRateWeekday: input.hourlyRateWeekday.toString(),
@@ -120,6 +121,7 @@ export const employeesRouter = router({
         .where(eq(employees.id, input.id))
         .returning();
       if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+      await writeAudit({ actorType: "platform_admin", actorId: ctx.platform.platformAdminId, employerId: updated.employerId, action: "employee.rates_updated", entityType: "employee", entityId: updated.id });
       return sanitize(updated);
     }),
 

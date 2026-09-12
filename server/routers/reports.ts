@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../db";
-import { employees, shifts, sites, timeEntries } from "../../drizzle/schema";
+import { employees, employers, shifts, sites, timeEntries } from "../../drizzle/schema";
 import { adminProcedure, router } from "../trpc";
 import { signedUrl } from "../storage";
+import { localDayBounds } from "../timezone";
 
 export const reportsRouter = router({
   // Today's (or a chosen day's) clock activity across the whole employer,
@@ -12,8 +13,8 @@ export const reportsRouter = router({
     .input(z.object({ date: z.string().optional() })) // "YYYY-MM-DD", defaults to today
     .query(async ({ ctx, input }) => {
       const day = input.date ?? new Date().toISOString().slice(0, 10);
-      const dayStart = new Date(`${day}T00:00:00.000Z`);
-      const dayEnd = new Date(`${day}T23:59:59.999Z`);
+      const [employer] = await db.select({ timezone: employers.timezone }).from(employers).where(eq(employers.id, ctx.admin.employerId));
+      const { start: dayStart, end: dayEnd } = localDayBounds(day, employer?.timezone ?? "Africa/Johannesburg");
 
       const employerEmployees = await db
         .select()

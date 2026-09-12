@@ -15,6 +15,9 @@ export default function PayslipsPage() {
   const generate = trpc.payslips.generateForMonth.useMutation({
     onSuccess: () => utils.payslips.list.invalidate(),
   });
+  const finalize = trpc.payslips.finalizePeriod.useMutation({
+    onSuccess: () => utils.payslips.list.invalidate(),
+  });
 
   async function share(payslipId: string, employeeName: string) {
     const url = `${window.location.origin}/share/payslip/${payslipId}`;
@@ -54,6 +57,15 @@ export default function PayslipsPage() {
           disabled={generate.isPending}
         >
           {generate.isPending ? "Generating..." : `Generate payslips for ${MONTHS[month - 1]} ${year}`}
+        </button>
+        <button
+          className="btn-secondary payslip-generate-button"
+          onClick={() => {
+            if (confirm(`Finalize ${MONTHS[month - 1]} ${year}? Finalized payslips cannot be regenerated.`)) finalize.mutate({ year, month });
+          }}
+          disabled={finalize.isPending}
+        >
+          {finalize.isPending ? "Finalizing..." : "Finalize payroll period"}
         </button>
       </div>
       <p className="text-xs text-slate-500 mb-4">

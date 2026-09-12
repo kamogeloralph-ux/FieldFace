@@ -13,20 +13,54 @@ import {
 } from "../auth";
 import { TRPCError } from "@trpc/server";
 
+const loginFailures = new Map<string, { count: number; firstAt: number }>();
+const FAILURE_WINDOW_MS = 15 * 60 * 1000;
+const MAX_FAILURES = 10;
+
+function loginKey(ip: string | undefined, employeeCode: string) {
+  return `${ip ?? "unknown"}:${employeeCode.trim().toLowerCase()}`;
+}
+
+function recordLoginFailure(key: string) {
+  const now = Date.now();
+  const current = loginFailures.get(key);
+  if (!current || now - current.firstAt > FAILURE_WINDOW_MS) loginFailures.set(key, { count: 1, firstAt: now });
+  else loginFailures.set(key, { ...current, count: current.count + 1 });
+}
+
+function isLoginBlocked(key: string) {
+  const current = loginFailures.get(key);
+  if (!current) return false;
+  if (Date.now() - current.firstAt > FAILURE_WINDOW_MS) {
+    loginFailures.delete(key);
+    return false;
+  }
+  return current.count >= MAX_FAILURES;
+}
+
 export const authRouter = router({
   // --- Employee (mobile clocking app) ---
   employeeLogin: publicProcedure
     .input(z.object({ employeeCode: z.string().min(1), pin: z.string().min(4).max(8), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
+      const failureKey = loginKey(ctx.req.ip, input.employeeCode);
+      if (isLoginBlocked(failureKey)) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many failed attempts. Try again in 15 minutes." });
       const [employee] = await db
         .select()
         .from(employees)
         .where(and(eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true)));
 
-      if (!employee) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
+      if (!employee) {
+        recordLoginFailure(failureKey);
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
+      }
 
       const pinOk = await verifyPin(input.pin, employee.pinHash);
-      if (!pinOk) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
+      if (!pinOk) {
+        recordLoginFailure(failureKey);
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
+      }
+      loginFailures.delete(failureKey);
 
       issueEmployeeSessionWithPreference(ctx.res, {
         employeeId: employee.id,

@@ -107,6 +107,8 @@ export default function ClockScreen() {
     try {
       const pos = await getCurrentPosition();
       const payload = {
+        actionId: crypto.randomUUID(),
+        capturedAt: new Date().toISOString(),
         entryType: status.data.nextAction,
         selfieBase64: photoDataUrl,
         latitude: pos.latitude,

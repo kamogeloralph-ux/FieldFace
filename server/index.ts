@@ -1,18 +1,39 @@
 import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "./routers";
 import { createContext } from "./trpc";
 import { startPayslipCron } from "./cron";
 import { db } from "./db";
-import { payslips } from "../drizzle/schema";
-import { signedUrl } from "./storage";
 
 const app = express();
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(self), geolocation=(self), microphone=()");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  next();
+});
 app.use(express.json({ limit: "12mb" })); // selfies come through as base64 in tRPC input
 app.use(cookieParser());
+
+const requestWindows = new Map<string, { startedAt: number; count: number }>();
+app.use("/api", (req, res, next) => {
+  const now = Date.now();
+  const ip = req.ip ?? "unknown";
+  const current = requestWindows.get(ip);
+  if (!current || now - current.startedAt >= 60_000) requestWindows.set(ip, { startedAt: now, count: 1 });
+  else {
+    current.count += 1;
+    if (current.count > 240) return res.status(429).json({ error: "Too many requests. Try again shortly." });
+  }
+  next();
+});
 
 app.use(
   "/api/trpc",
@@ -22,17 +43,12 @@ app.use(
   }),
 );
 
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
-
-// Short, shareable bearer link for a payslip. The UUID is intentionally the
-// only identifier in the public URL; the private R2 URL stays server-side.
-app.get("/share/payslip/:payslipId", async (req, res, next) => {
+app.get("/api/health", async (_req, res) => {
   try {
-    const [payslip] = await db.select().from(payslips).where(eq(payslips.id, req.params.payslipId));
-    if (!payslip) return res.status(404).send("Payslip not found.");
-    return res.redirect(302, await signedUrl("payslips", payslip.pdfPath, 3600));
-  } catch (error) {
-    return next(error);
+    await db.execute(sql`select 1`);
+    res.json({ ok: true, database: "ok", now: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ ok: false, database: "unavailable" });
   }
 });
 
