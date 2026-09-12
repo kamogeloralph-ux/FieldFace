@@ -20,6 +20,7 @@ export const employers = pgTable("employers", {
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   supportWhatsapp: text("support_whatsapp"),
+  supportPhone: text("support_phone"),
   supportEmail: text("support_email"),
   address: text("address"),
   taxNumber: text("tax_number"),

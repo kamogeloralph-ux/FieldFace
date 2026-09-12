@@ -7,7 +7,7 @@ import { removeSchedule, signedScheduleUrl, uploadSchedule } from "../storage";
 
 export const employersRouter = router({
   getPublicSupport: publicProcedure.query(async () => {
-    const [employer] = await db.select({ name: employers.name, supportWhatsapp: employers.supportWhatsapp, supportEmail: employers.supportEmail }).from(employers).orderBy(employers.createdAt).limit(1);
+    const [employer] = await db.select({ name: employers.name, supportWhatsapp: employers.supportWhatsapp, supportPhone: employers.supportPhone, supportEmail: employers.supportEmail }).from(employers).orderBy(employers.createdAt).limit(1);
     return employer ?? null;
   }),
 
@@ -48,9 +48,9 @@ export const employersRouter = router({
   }),
 
   updateSupport: ownerProcedure
-    .input(z.object({ supportWhatsapp: z.string().trim().max(40), supportEmail: z.string().trim().email().or(z.literal("")) }))
+    .input(z.object({ supportWhatsapp: z.string().trim().max(40), supportPhone: z.string().trim().max(40), supportEmail: z.string().trim().email().or(z.literal("")) }))
     .mutation(async ({ ctx, input }) => {
-      const [updated] = await db.update(employers).set({ supportWhatsapp: input.supportWhatsapp || null, supportEmail: input.supportEmail || null }).where(eq(employers.id, ctx.admin.employerId)).returning({ supportWhatsapp: employers.supportWhatsapp, supportEmail: employers.supportEmail });
+      const [updated] = await db.update(employers).set({ supportWhatsapp: input.supportWhatsapp || null, supportPhone: input.supportPhone || null, supportEmail: input.supportEmail || null }).where(eq(employers.id, ctx.admin.employerId)).returning({ supportWhatsapp: employers.supportWhatsapp, supportPhone: employers.supportPhone, supportEmail: employers.supportEmail });
       if (!updated) throw new Error("Company not found.");
       return updated;
     }),
