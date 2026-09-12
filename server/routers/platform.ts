@@ -44,27 +44,14 @@ export const platformRouter = router({
   }),
 
   listCompanies: platformProcedure.query(async () => {
-    const rows = await db
-      .select({
-        id: employers.id,
-        name: employers.name,
-        contactEmail: employers.contactEmail,
-        contactPhone: employers.contactPhone,
-        address: employers.address,
-        taxNumber: employers.taxNumber,
-        companyRegNumber: employers.companyRegNumber,
-        uifEnabled: employers.uifEnabled,
-        uifEmployeeRate: employers.uifEmployeeRate,
-        uifEmployerRate: employers.uifEmployerRate,
-        createdAt: employers.createdAt,
-        employeeCount: sql<number>`(select count(*) from ${employees} where ${employees.employerId} = ${employers.id})`,
-        siteCount: sql<number>`(select count(*) from ${sites} where ${sites.employerId} = ${employers.id})`,
-        orphanEmployeeCount: sql<number>`(select count(*) from ${employees} e where not exists (select 1 from ${employers} owner where owner.id = e.employer_id))`,
-        orphanSiteCount: sql<number>`(select count(*) from ${sites} s where not exists (select 1 from ${employers} owner where owner.id = s.employer_id))`,
-      })
-      .from(employers)
-      .orderBy(employers.createdAt);
-    return rows;
+    const [rows, employeeCounts, siteCounts] = await Promise.all([
+      db.select({ id: employers.id, name: employers.name, contactEmail: employers.contactEmail, contactPhone: employers.contactPhone, address: employers.address, taxNumber: employers.taxNumber, companyRegNumber: employers.companyRegNumber, uifEnabled: employers.uifEnabled, uifEmployeeRate: employers.uifEmployeeRate, uifEmployerRate: employers.uifEmployerRate, createdAt: employers.createdAt }).from(employers).orderBy(employers.createdAt),
+      db.select({ employerId: employees.employerId, count: sql<number>`count(*)` }).from(employees).groupBy(employees.employerId),
+      db.select({ employerId: sites.employerId, count: sql<number>`count(*)` }).from(sites).groupBy(sites.employerId),
+    ]);
+    const employeesByEmployer = new Map(employeeCounts.map((row) => [row.employerId, Number(row.count)]));
+    const sitesByEmployer = new Map(siteCounts.map((row) => [row.employerId, Number(row.count)]));
+    return rows.map((row) => ({ ...row, employeeCount: employeesByEmployer.get(row.id) ?? 0, siteCount: sitesByEmployer.get(row.id) ?? 0 }));
   }),
 
   createCompany: platformProcedure

@@ -105,7 +105,7 @@ export default function CompaniesPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-slate-800 mb-1">Companies</h1>
+      <div className="flex items-center justify-between gap-3"><h1 className="text-xl font-bold text-slate-800 mb-1">Companies</h1><button type="button" className="btn-secondary w-auto px-3 py-2 text-sm" onClick={() => companies.refetch()} disabled={companies.isFetching}>{companies.isFetching ? "Refreshing..." : "Refresh counts"}</button></div>
       <p className="text-sm text-slate-500 mb-5">Create companies and edit their complete settings here. Company management users remain read-only for these settings.</p>
 
       <form onSubmit={handleCreate} className="card flex flex-col sm:flex-row gap-3 mb-5">
