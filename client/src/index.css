@@ -390,3 +390,18 @@ body {
   font-size: 1.5rem;
   line-height: 1;
 }
+
+.platform-sidebar { position: fixed; z-index: 40; inset: 0 auto 0 0; width: 18rem; padding: 1rem; color: #ecfdf5; background: #064e3b; box-shadow: 1rem 0 3rem rgba(2, 44, 34, 0.22); }
+.platform-content-shell { min-height: 100dvh; margin-left: 18rem; }
+.platform-mobile-header { display: none; }
+.platform-menu-button, .platform-close-button, .platform-drawer-backdrop { display: none; }
+@media (max-width: 767px) {
+  .platform-sidebar { width: min(18rem, calc(100vw - 3rem)); transform: translateX(-105%); transition: transform 180ms ease; }
+  .platform-sidebar.is-open { transform: translateX(0); }
+  .platform-content-shell { margin-left: 0; }
+  .platform-mobile-header { display: flex; align-items: center; gap: .75rem; min-height: 4rem; padding: .75rem 1rem; border-bottom: 1px solid #e2e8f0; background: rgba(255,255,255,.9); }
+  .platform-menu-button { display: flex; flex-direction: column; justify-content: center; gap: .25rem; width: 2.5rem; height: 2.5rem; padding: .65rem; border: 1px solid #cbd5e1; border-radius: .75rem; background: white; }
+  .platform-menu-button span { display: block; width: 100%; height: 2px; border-radius: 99px; background: #047857; }
+  .platform-close-button { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 0; border-radius: 999px; color: #d1fae5; background: rgba(255,255,255,.1); font-size: 1.5rem; line-height: 1; }
+  .platform-drawer-backdrop { display: block; position: fixed; z-index: 30; inset: 0; width: 100%; border: 0; background: rgba(2,44,34,.48); }
+}

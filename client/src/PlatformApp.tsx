@@ -4,6 +4,7 @@ import { trpc } from "./lib/trpc";
 import PlatformLogin from "./platform/PlatformLogin";
 import PlatformLayout from "./platform/PlatformLayout";
 import CompaniesPage from "./platform/CompaniesPage";
+import SupportPage from "./platform/SupportPage";
 
 function RequirePlatformOwner({ children }: { children: React.ReactNode }) {
   const me = trpc.platform.me.useQuery();
@@ -31,6 +32,7 @@ export default function PlatformApp() {
         }
       >
         <Route index element={<CompaniesPage />} />
+        <Route path="support" element={<SupportPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
