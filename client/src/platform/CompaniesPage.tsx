@@ -52,6 +52,7 @@ export default function CompaniesPage() {
     { enabled: !!selected },
   );
   const updateRates = trpc.employees.updateRates.useMutation({ onSuccess: () => employees.refetch() });
+  const updateActive = trpc.employees.updateActive.useMutation({ onSuccess: () => employees.refetch() });
 
   useEffect(() => {
     if (!selected) return;
@@ -145,7 +146,7 @@ export default function CompaniesPage() {
               {form.uifEnabled && <div className="grid grid-cols-2 gap-3"><label className="text-xs text-slate-500">Employee rate %<input className="input-field mt-1" type="number" min="0" max="100" step="0.01" value={form.uifEmployeeRate} onChange={(e) => setField("uifEmployeeRate", e.target.value)} /></label><label className="text-xs text-slate-500">Employer rate %<input className="input-field mt-1" type="number" min="0" max="100" step="0.01" value={form.uifEmployerRate} onChange={(e) => setField("uifEmployerRate", e.target.value)} /></label></div>}
               <button className="btn-primary" onClick={saveCompany} disabled={updateCompany.isPending}>{updateCompany.isPending ? "Saving..." : "Save company settings"}</button>
             </div>
-            <div><h3 className="font-semibold text-slate-800 mb-2">Employee rates</h3><div className="space-y-2">{employees.data?.map((emp) => <RateRow key={emp.id} employee={emp} onSave={(weekday, weekend) => updateRates.mutate({ id: emp.id, hourlyRateWeekday: weekday, hourlyRateWeekend: weekend })} />)}{employees.data?.length === 0 && <p className="text-sm text-slate-500">No employees yet.</p>}</div></div>
+            <div><h3 className="font-semibold text-slate-800 mb-2">Employee rates and activation</h3><p className="text-xs text-slate-500 mb-2">Only the platform administrator can deactivate or reactivate employees.</p><div className="space-y-2">{employees.data?.map((emp) => <RateRow key={emp.id} employee={emp} onSave={(weekday, weekend) => updateRates.mutate({ id: emp.id, hourlyRateWeekday: weekday, hourlyRateWeekend: weekend })} onToggle={() => updateActive.mutate({ id: emp.id, active: !emp.active })} />)}{employees.data?.length === 0 && <p className="text-sm text-slate-500">No employees yet.</p>}</div></div>
           </div>
         </div>
       )}
@@ -153,8 +154,8 @@ export default function CompaniesPage() {
   );
 }
 
-function RateRow({ employee, onSave }: { employee: { id: string; fullName: string; hourlyRateWeekday: string; hourlyRateWeekend: string }; onSave: (weekday: number, weekend: number) => void }) {
+function RateRow({ employee, onSave, onToggle }: { employee: { id: string; fullName: string; active: boolean; hourlyRateWeekday: string; hourlyRateWeekend: string }; onSave: (weekday: number, weekend: number) => void; onToggle: () => void }) {
   const [weekday, setWeekday] = useState(employee.hourlyRateWeekday);
   const [weekend, setWeekend] = useState(employee.hourlyRateWeekend);
-  return <div className="flex flex-col sm:flex-row sm:items-center gap-2 border border-slate-100 rounded-lg p-3"><span className="flex-1 font-medium text-slate-700">{employee.fullName}</span><input className="input-field sm:w-32" type="number" step="0.01" value={weekday} onChange={(e) => setWeekday(e.target.value)} aria-label={`${employee.fullName} weekday rate`} /><input className="input-field sm:w-32" type="number" step="0.01" value={weekend} onChange={(e) => setWeekend(e.target.value)} aria-label={`${employee.fullName} weekend rate`} /><button className="btn-secondary w-auto px-3 py-2 text-sm" onClick={() => onSave(Number(weekday), Number(weekend))}>Save rates</button></div>;
+  return <div className="flex flex-col sm:flex-row sm:items-center gap-2 border border-slate-100 rounded-lg p-3"><span className="flex-1 font-medium text-slate-700">{employee.fullName} {!employee.active && <span className="text-xs text-red-500">Inactive</span>}</span><input className="input-field sm:w-32" type="number" step="0.01" value={weekday} onChange={(e) => setWeekday(e.target.value)} aria-label={`${employee.fullName} weekday rate`} /><input className="input-field sm:w-32" type="number" step="0.01" value={weekend} onChange={(e) => setWeekend(e.target.value)} aria-label={`${employee.fullName} weekend rate`} /><button className="btn-secondary w-auto px-3 py-2 text-sm" onClick={() => onSave(Number(weekday), Number(weekend))}>Save rates</button><button className="text-sm text-slate-500 underline px-2" onClick={onToggle}>{employee.active ? "Deactivate" : "Activate"}</button></div>;
 }

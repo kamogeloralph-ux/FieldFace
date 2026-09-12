@@ -8,7 +8,6 @@ export default function EmployeesPage() {
   const month = now.getMonth() + 1;
   const utils = trpc.useUtils();
   const employees = trpc.employees.list.useQuery();
-  const updateEmployee = trpc.employees.update.useMutation({ onSuccess: () => utils.employees.list.invalidate() });
   const resetPin = trpc.employees.resetPin.useMutation();
   const generatePayslip = trpc.payslips.generateForEmployee.useMutation({
     onSuccess: () => utils.employees.list.invalidate(),
@@ -95,12 +94,6 @@ export default function EmployeesPage() {
                 }}
               >
                 Reset PIN
-              </button>
-              <button
-                className="text-sm text-slate-500 underline"
-                onClick={() => updateEmployee.mutate({ id: emp.id, active: !emp.active })}
-              >
-                {emp.active ? "Deactivate" : "Activate"}
               </button>
             </div>
           </div>

@@ -77,7 +77,6 @@ export const employeesRouter = router({
         phone: z.string().optional(),
         email: z.string().email().optional().or(z.literal("")),
         siteId: z.string().uuid().optional().nullable(),
-        active: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -122,6 +121,15 @@ export const employeesRouter = router({
         .returning();
       if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
       await writeAudit({ actorType: "platform_admin", actorId: ctx.platform.platformAdminId, employerId: updated.employerId, action: "employee.rates_updated", entityType: "employee", entityId: updated.id });
+      return sanitize(updated);
+    }),
+
+  updateActive: platformProcedure
+    .input(z.object({ id: z.string().uuid(), active: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const [updated] = await db.update(employees).set({ active: input.active }).where(eq(employees.id, input.id)).returning();
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+      await writeAudit({ actorType: "platform_admin", actorId: ctx.platform.platformAdminId, employerId: updated.employerId, action: input.active ? "employee.activated" : "employee.deactivated", entityType: "employee", entityId: updated.id });
       return sanitize(updated);
     }),
 
