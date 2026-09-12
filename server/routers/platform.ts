@@ -49,6 +49,12 @@ export const platformRouter = router({
         name: employers.name,
         contactEmail: employers.contactEmail,
         contactPhone: employers.contactPhone,
+        address: employers.address,
+        taxNumber: employers.taxNumber,
+        companyRegNumber: employers.companyRegNumber,
+        uifEnabled: employers.uifEnabled,
+        uifEmployeeRate: employers.uifEmployeeRate,
+        uifEmployerRate: employers.uifEmployerRate,
         createdAt: employers.createdAt,
         employeeCount: sql<number>`(select count(*) from ${employees} where ${employees.employerId} = ${employers.id})`,
         siteCount: sql<number>`(select count(*) from ${sites} where ${sites.employerId} = ${employers.id})`,
@@ -74,9 +80,15 @@ export const platformRouter = router({
       address: z.string().optional(),
       taxNumber: z.string().optional(),
       companyRegNumber: z.string().optional(),
+      uifEnabled: z.boolean().optional(),
+      uifEmployeeRate: z.number().min(0).max(100).optional(),
+      uifEmployerRate: z.number().min(0).max(100).optional(),
     }))
     .mutation(async ({ input }) => {
-      const { id, ...values } = input;
+      const { id, uifEmployeeRate, uifEmployerRate, ...rest } = input;
+      const values: Record<string, unknown> = { ...rest };
+      if (typeof uifEmployeeRate === "number") values.uifEmployeeRate = uifEmployeeRate.toString();
+      if (typeof uifEmployerRate === "number") values.uifEmployerRate = uifEmployerRate.toString();
       const [updated] = await db.update(employers).set(values).where(eq(employers.id, id)).returning();
       if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
       return updated;
