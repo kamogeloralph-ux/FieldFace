@@ -74,8 +74,13 @@ export default function CompaniesPage() {
 
   async function handleManage(employerId: string) {
     setBusyId(employerId);
-    try { await impersonate.mutateAsync({ employerId }); window.location.href = "/company"; }
-    finally { setBusyId(null); }
+    try {
+      await impersonate.mutateAsync({ employerId });
+      window.location.assign("/company");
+    } catch (error) {
+      setBusyId(null);
+      alert(error instanceof Error ? error.message : "Could not open the company dashboard.");
+    }
   }
 
   async function saveCompany() {
@@ -111,7 +116,9 @@ export default function CompaniesPage() {
             <div><p className="font-semibold text-slate-800">{c.name}</p><p className="text-xs text-slate-500">{c.employeeCount} employee{c.employeeCount === 1 ? "" : "s"} · {c.siteCount} site{c.siteCount === 1 ? "" : "s"}{c.contactEmail ? ` · ${c.contactEmail}` : ""}</p></div>
             <div className="flex flex-wrap gap-3">
               <button className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => setSelected(c)}>Edit company and rates</button>
-              <button className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => handleManage(c.id)} disabled={busyId === c.id}>Manage this company</button>
+              <button type="button" className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => void handleManage(c.id)} disabled={busyId === c.id || impersonate.isPending} aria-busy={busyId === c.id}>
+                {busyId === c.id ? "Opening..." : "Manage this company"}
+              </button>
               <button className="text-sm text-red-600 underline px-1" onClick={async () => { if (confirm(`Delete "${c.name}"? This permanently removes its sites, employees, time records and payslips.`)) await deleteCompany.mutateAsync({ id: c.id }); }} disabled={busyId === c.id}>Delete</button>
             </div>
           </div>
