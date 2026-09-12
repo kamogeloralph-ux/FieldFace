@@ -48,6 +48,7 @@ export default function AdminLayout() {
         </nav>
         <div className="pt-4 border-t border-emerald-800">
           <p className="text-xs text-emerald-300 mb-2">{me.data?.fullName}</p>
+          <a href="/policy" className="text-sm text-emerald-200 underline block mb-2">Client policy</a>
           <button
             className="text-sm text-emerald-200 underline"
             onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/company/login") })}

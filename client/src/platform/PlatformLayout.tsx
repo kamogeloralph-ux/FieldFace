@@ -12,6 +12,7 @@ export default function PlatformLayout() {
         <img src="/fieldface-logo-white.png" alt="Fieldface" className="h-6 w-auto" />
         <div className="flex items-center gap-4">
           <p className="text-emerald-200 text-sm hidden sm:block">{me.data?.fullName}</p>
+          <a href="/policy" className="text-sm text-emerald-100 underline">Policy</a>
           <button
             className="text-sm text-emerald-100 underline"
             onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login") })}

@@ -13,6 +13,7 @@ import EmployeesPage from "./admin/EmployeesPage";
 import SitesPage from "./admin/SitesPage";
 import PayslipsPage from "./admin/PayslipsPage";
 import EmployerSettingsPage from "./admin/EmployerSettingsPage";
+import PolicyPage from "./pages/PolicyPage";
 
 function RequireCompanyAdmin({ children }: { children: React.ReactNode }) {
   const me = trpc.auth.adminMe.useQuery();
@@ -36,6 +37,7 @@ export default function App() {
       <Route path="/clock" element={<ClockScreen />} />
       <Route path="/history" element={<HistoryScreen />} />
       <Route path="/payslips" element={<EmployeePayslipPage />} />
+      <Route path="/policy" element={<PolicyPage />} />
 
       {/* Supervisor / employer company dashboard */}
       <Route path="/company/login" element={<AdminLogin />} />

@@ -56,6 +56,7 @@ export default function PlatformLogin() {
         </button>
       </form>
       </div>
+      <p className="text-center text-xs text-emerald-100/80 mt-4"><a href="/policy" className="underline">Read the client policy</a></p>
       </div>
     </div>
   );

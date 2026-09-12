@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 
 export default function EmployeeLogin() {
@@ -72,6 +72,7 @@ export default function EmployeeLogin() {
           {login.isPending ? "Checking..." : "Log in"}
         </button>
       </form>
+      <p className="text-center text-xs text-slate-500 mt-4"><Link to="/policy" className="underline">Read the client policy</Link></p>
       </div>
     </div>
   );

@@ -85,6 +85,7 @@ export default function WelcomeScreen() {
             </div>
           ))}
         </div>
+        <p className="text-center text-xs text-slate-500 mt-6"><Link to="/policy" className="underline">Read the FieldFace client policy</Link></p>
       </div>
     </div>
   );
