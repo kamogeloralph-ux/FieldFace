@@ -5,6 +5,7 @@ import { employees, leaveRequests } from "../../drizzle/schema";
 import { adminProcedure, employeeProcedure, router } from "../trpc";
 
 const dateInput = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid date.");
+const leaveType = z.enum(["annual", "sick", "family_responsibility", "maternity", "parental", "adoption", "commissioning_parental", "study", "unpaid", "compassionate", "religious", "domestic_violence", "injury_on_duty", "other"]);
 
 export const leaveRequestsRouter = router({
   mine: employeeProcedure.query(async ({ ctx }) =>
@@ -14,10 +15,10 @@ export const leaveRequestsRouter = router({
   ),
 
   submit: employeeProcedure
-    .input(z.object({ startDate: dateInput, endDate: dateInput, reason: z.string().trim().min(2).max(500) }))
+    .input(z.object({ leaveType, startDate: dateInput, endDate: dateInput, reason: z.string().trim().min(2).max(500) }))
     .mutation(async ({ ctx, input }) => {
       if (input.endDate < input.startDate) throw new Error("The end date must be on or after the start date.");
-      const [created] = await db.insert(leaveRequests).values({ employerId: ctx.employee.employerId, employeeId: ctx.employee.employeeId, startDate: input.startDate, endDate: input.endDate, reason: input.reason }).returning();
+      const [created] = await db.insert(leaveRequests).values({ employerId: ctx.employee.employerId, employeeId: ctx.employee.employeeId, leaveType: input.leaveType, startDate: input.startDate, endDate: input.endDate, reason: input.reason }).returning();
       return created;
     }),
 
@@ -35,6 +36,7 @@ export const leaveRequestsRouter = router({
       employeeId: leaveRequests.employeeId,
       employeeName: employees.fullName,
       employeeCode: employees.employeeCode,
+      leaveType: leaveRequests.leaveType,
       startDate: leaveRequests.startDate,
       endDate: leaveRequests.endDate,
       reason: leaveRequests.reason,

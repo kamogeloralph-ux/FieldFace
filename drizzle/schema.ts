@@ -108,6 +108,7 @@ export const leaveRequests = pgTable("leave_requests", {
   id: uuid("id").primaryKey().defaultRandom(),
   employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),
   employeeId: uuid("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  leaveType: text("leave_type").notNull().default("annual"),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   reason: text("reason").notNull(),

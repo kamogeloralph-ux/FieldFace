@@ -10,6 +10,7 @@ create table if not exists public.leave_requests (
   id uuid primary key default gen_random_uuid(),
   employer_id uuid not null references public.employers(id) on delete cascade,
   employee_id uuid not null references public.employees(id) on delete cascade,
+  leave_type text not null default 'annual',
   start_date date not null,
   end_date date not null,
   reason text not null,
@@ -19,6 +20,7 @@ create table if not exists public.leave_requests (
   reviewed_at timestamptz,
   created_at timestamptz not null default now()
 );
+alter table public.leave_requests add column if not exists leave_type text not null default 'annual';
 create index if not exists leave_requests_employer_status_idx on public.leave_requests(employer_id, status, start_date);
 create table if not exists public.sick_notes (
   id uuid primary key default gen_random_uuid(),
