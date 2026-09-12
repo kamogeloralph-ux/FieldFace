@@ -2,13 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 import { getCurrentPosition } from "../lib/geolocation";
+import { cacheEmployeeStatus, getCachedEmployeeStatus, queueClock, syncQueuedClocks } from "../lib/offlineClock";
 
 type Stage = "idle" | "camera" | "preview" | "submitting" | "done";
 
 export default function ClockScreen() {
   const navigate = useNavigate();
   const me = trpc.auth.employeeMe.useQuery();
-  const status = trpc.timeEntries.status.useQuery(undefined, { enabled: !!me.data });
+  const status = trpc.timeEntries.status.useQuery(undefined, {
+    enabled: !!me.data,
+    placeholderData: () => getCachedEmployeeStatus(),
+  });
   const utils = trpc.useUtils();
   const clock = trpc.timeEntries.clock.useMutation();
   const logout = trpc.auth.employeeLogout.useMutation();
@@ -16,7 +20,8 @@ export default function ClockScreen() {
   const [stage, setStage] = useState<Stage>("idle");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ withinGeofence: boolean; distanceMeters: number; entryType: string } | null>(null);
+  const [result, setResult] = useState<{ withinGeofence: boolean; distanceMeters: number; entryType: string; queued?: boolean } | null>(null);
+  const [offline, setOffline] = useState(() => !navigator.onLine);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -27,6 +32,27 @@ export default function ClockScreen() {
 
   useEffect(() => {
     return () => stopCamera();
+  }, []);
+
+  useEffect(() => {
+    if (status.data) cacheEmployeeStatus(status.data);
+  }, [status.data]);
+
+  useEffect(() => {
+    const sync = async () => {
+      setOffline(false);
+      try {
+        await syncQueuedClocks(async (payload) => clock.mutateAsync(payload));
+        await utils.timeEntries.status.invalidate();
+      } catch {
+        setOffline(true);
+      }
+    };
+    const goOffline = () => setOffline(true);
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", goOffline);
+    if (navigator.onLine) void sync();
+    return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", goOffline); };
   }, []);
 
   async function startCamera() {
@@ -80,14 +106,26 @@ export default function ClockScreen() {
     setError(null);
     try {
       const pos = await getCurrentPosition();
-      const res = await clock.mutateAsync({
+      const payload = {
         entryType: status.data.nextAction,
         selfieBase64: photoDataUrl,
         latitude: pos.latitude,
         longitude: pos.longitude,
         gpsAccuracyMeters: pos.accuracy,
-      });
-      setResult({ withinGeofence: res.withinGeofence, distanceMeters: res.distanceMeters, entryType: res.entryType });
+      };
+      let res: { withinGeofence: boolean; distanceMeters: number; entryType: string };
+      let queued = false;
+      try {
+        res = await clock.mutateAsync(payload);
+      } catch (requestError) {
+        if (navigator.onLine) throw requestError;
+        await queueClock(payload);
+        queued = true;
+        res = { withinGeofence: false, distanceMeters: 0, entryType: payload.entryType };
+        setOffline(true);
+        cacheEmployeeStatus({ ...status.data, nextAction: payload.entryType === "clock_in" ? "clock_out" : "clock_in" });
+      }
+      setResult({ withinGeofence: res.withinGeofence, distanceMeters: res.distanceMeters, entryType: res.entryType, queued });
       setStage("done");
       utils.timeEntries.status.invalidate();
       utils.timeEntries.myShifts.invalidate();
@@ -126,6 +164,8 @@ export default function ClockScreen() {
           </button>
         </div>
       </header>
+
+      {offline && <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">Offline mode: clock actions are saved securely and will sync automatically when you reconnect.</div>}
 
       {stage === "idle" && (
         <div className="space-y-3">
@@ -188,8 +228,9 @@ export default function ClockScreen() {
             {result.withinGeofence ? "✓" : "!"}
           </div>
           <p className="text-lg font-semibold text-slate-800">
-            {result.entryType === "clock_in" ? "Clocked in" : "Clocked out"} successfully
+            {result.queued ? `${result.entryType === "clock_in" ? "Clock in" : "Clock out"} saved offline` : `${result.entryType === "clock_in" ? "Clocked in" : "Clocked out"} successfully`}
           </p>
+          {result.queued && <p className="text-sm text-amber-700 max-w-xs">Your selfie and location will be sent when the connection returns.</p>}
           {!result.withinGeofence && (
             <p className="text-amber-700 text-sm max-w-xs">
               You were about {result.distanceMeters}m from the designated area. This has been recorded and flagged for your supervisor.

@@ -18,14 +18,17 @@ export default function EmployeeLogin() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col justify-center px-6 py-10 max-w-sm mx-auto">
+    <div className="app-wallpaper min-h-screen flex flex-col justify-center px-6 py-10">
+      <div className="login-panel max-w-sm mx-auto w-full">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-emerald-800">FieldFace</h1>
-        <p className="text-slate-500 mt-1">Enter your tax number and PIN to clock in or out.</p>
+        <div className="flex justify-center mb-6"><div className="brand-lockup"><img src="/fieldface-logo.png" alt="FieldFace" className="h-8 w-auto" /></div></div>
+        <p className="eyebrow mb-3">FIELD OPERATIONS, SIMPLIFIED</p>
+        <h1 className="text-2xl font-bold text-emerald-900">Employee clock-in</h1>
+        <p className="text-slate-600 mt-1">Enter your tax number and PIN to clock in or out. Your shift can be saved when offline.</p>
       </div>
 
       <form
-        className="space-y-4"
+        className="login-form-card space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
@@ -59,6 +62,7 @@ export default function EmployeeLogin() {
           {login.isPending ? "Checking..." : "Log in"}
         </button>
       </form>
+      </div>
     </div>
   );
 }
