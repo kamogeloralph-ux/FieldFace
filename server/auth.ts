@@ -88,9 +88,10 @@ export async function verifySupabaseAccessToken(accessToken: string) {
   return data.user;
 }
 
-export function issueAdminSession(res: Response, session: AdminSession) {
-  const token = jwt.sign(session, SESSION_SECRET!, { expiresIn: "12h" });
-  res.cookie(ADMIN_COOKIE_NAME, token, COOKIE_OPTIONS);
+export function issueAdminSession(res: Response, session: AdminSession, rememberMe = false) {
+  const maxAge = rememberMe ? 1000 * 60 * 60 * 24 * 30 : 1000 * 60 * 60 * 12;
+  const token = jwt.sign(session, SESSION_SECRET!, { expiresIn: rememberMe ? "30d" : "12h" });
+  res.cookie(ADMIN_COOKIE_NAME, token, { ...COOKIE_OPTIONS, maxAge });
 }
 
 export function readAdminSession(req: Request): AdminSession | null {
@@ -111,9 +112,10 @@ export function clearAdminSession(res: Response) {
 // Platform admins are not tied to a single employer: they manage the list of
 // companies as a whole (create/delete a company, or step into one to fix it).
 
-export function issuePlatformSession(res: Response, session: PlatformSession) {
-  const token = jwt.sign(session, SESSION_SECRET!, { expiresIn: "12h" });
-  res.cookie(PLATFORM_COOKIE_NAME, token, COOKIE_OPTIONS);
+export function issuePlatformSession(res: Response, session: PlatformSession, rememberMe = false) {
+  const maxAge = rememberMe ? 1000 * 60 * 60 * 24 * 30 : 1000 * 60 * 60 * 12;
+  const token = jwt.sign(session, SESSION_SECRET!, { expiresIn: rememberMe ? "30d" : "12h" });
+  res.cookie(PLATFORM_COOKIE_NAME, token, { ...COOKIE_OPTIONS, maxAge });
 }
 
 export function readPlatformSession(req: Request): PlatformSession | null {

@@ -118,7 +118,7 @@ export const authRouter = router({
 
   // --- Admin / supervisor (admin.html) ---
   adminLogin: publicProcedure
-    .input(z.object({ employerId: z.string().uuid(), username: z.string().min(1), password: z.string().min(8) }))
+    .input(z.object({ employerId: z.string().uuid(), username: z.string().min(1), password: z.string().min(8), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
       const [result] = await db.select({ profile: adminUsers }).from(adminUsers)
         .where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.trim().toLowerCase())));
@@ -136,7 +136,7 @@ export const authRouter = router({
         adminUserId: profile.id,
         employerId: profile.employerId,
         role: profile.role as "owner" | "supervisor",
-      });
+      }, input.rememberMe);
 
       const [employer] = await db.select().from(employers).where(eq(employers.id, profile.employerId));
 

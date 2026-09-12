@@ -21,7 +21,7 @@ function companyCodePrefix(name: string) {
 
 export const platformRouter = router({
   login: publicProcedure
-    .input(z.object({ accessToken: z.string().min(1) }))
+    .input(z.object({ accessToken: z.string().min(1), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
       const user = await verifySupabaseAccessToken(input.accessToken);
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid session, please sign in again." });
@@ -34,7 +34,7 @@ export const platformRouter = router({
         });
       }
 
-      issuePlatformSession(ctx.res, { platformAdminId: profile.id });
+      issuePlatformSession(ctx.res, { platformAdminId: profile.id }, input.rememberMe);
       return { id: profile.id, fullName: profile.fullName, email: profile.email };
     }),
 

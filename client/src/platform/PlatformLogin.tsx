@@ -6,6 +6,7 @@ import { trpc } from "../lib/trpc";
 export default function PlatformLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function PlatformLogin() {
       if (supaError || !data.session) {
         throw new Error(supaError?.message ?? "Invalid email or password.");
       }
-      await platformLogin.mutateAsync({ accessToken: data.session.access_token });
+      await platformLogin.mutateAsync({ accessToken: data.session.access_token, rememberMe });
       await utils.platform.me.invalidate();
       navigate("/");
     } catch (err) {
@@ -51,6 +52,7 @@ export default function PlatformLogin() {
           <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
           <input className="input-field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
+        <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 accent-emerald-700" />Stay signed in on this device for 30 days</label>
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <button className="btn-primary" type="submit" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}
