@@ -1,14 +1,19 @@
 import { z } from "zod";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db";
-import { companyDeductionEmployees, companyDeductions, employees, employers } from "../../drizzle/schema";
+import { companyDeductionEmployees, companyDeductions, employees, employers, platformAdmins } from "../../drizzle/schema";
 import { adminProcedure, employeeProcedure, ownerProcedure, platformProcedure, publicProcedure, router } from "../trpc";
 import { removeSchedule, signedScheduleUrl, uploadSchedule } from "../storage";
 
 export const employersRouter = router({
   getPublicSupport: publicProcedure.query(async () => {
-    const [employer] = await db.select({ name: employers.name, supportWhatsapp: employers.supportWhatsapp, supportPhone: employers.supportPhone, supportEmail: employers.supportEmail }).from(employers).orderBy(employers.createdAt).limit(1);
-    return employer ?? null;
+    const [support] = await db.select({ supportWhatsapp: platformAdmins.supportWhatsapp, supportPhone: platformAdmins.supportPhone, supportEmail: platformAdmins.supportEmail }).from(platformAdmins).orderBy(platformAdmins.createdAt).limit(1);
+    return support ?? null;
+  }),
+
+  getPlatformSupport: platformProcedure.query(async ({ ctx }) => {
+    const [support] = await db.select({ supportWhatsapp: platformAdmins.supportWhatsapp, supportPhone: platformAdmins.supportPhone, supportEmail: platformAdmins.supportEmail }).from(platformAdmins).where(eq(platformAdmins.id, ctx.platform.platformAdminId));
+    return support ?? null;
   }),
 
   getMine: adminProcedure.query(async ({ ctx }) => {
@@ -47,10 +52,10 @@ export const employersRouter = router({
     return { success: true as const };
   }),
 
-  updateSupport: ownerProcedure
+  updateSupport: platformProcedure
     .input(z.object({ supportWhatsapp: z.string().trim().max(40), supportPhone: z.string().trim().max(40), supportEmail: z.string().trim().email().or(z.literal("")) }))
     .mutation(async ({ ctx, input }) => {
-      const [updated] = await db.update(employers).set({ supportWhatsapp: input.supportWhatsapp || null, supportPhone: input.supportPhone || null, supportEmail: input.supportEmail || null }).where(eq(employers.id, ctx.admin.employerId)).returning({ supportWhatsapp: employers.supportWhatsapp, supportPhone: employers.supportPhone, supportEmail: employers.supportEmail });
+      const [updated] = await db.update(platformAdmins).set({ supportWhatsapp: input.supportWhatsapp || null, supportPhone: input.supportPhone || null, supportEmail: input.supportEmail || null }).where(eq(platformAdmins.id, ctx.platform.platformAdminId)).returning({ supportWhatsapp: platformAdmins.supportWhatsapp, supportPhone: platformAdmins.supportPhone, supportEmail: platformAdmins.supportEmail });
       if (!updated) throw new Error("Company not found.");
       return updated;
     }),

@@ -25,6 +25,7 @@ const emptyForm: Form = {
 export default function EmployerSettingsPage() {
   const me = trpc.auth.adminMe.useQuery();
   const employer = trpc.employers.getMine.useQuery();
+  const platformSupport = trpc.employers.getPlatformSupport.useQuery(undefined, { enabled: me.data?.isPlatformAdmin === true });
   const utils = trpc.useUtils();
   const update = trpc.employers.updateMine.useMutation({
     onSuccess: async () => {
@@ -65,6 +66,11 @@ export default function EmployerSettingsPage() {
       uifEmployerRate: employer.data.uifEmployerRate ?? "1.00",
     });
   }, [employer.data]);
+
+  useEffect(() => {
+    if (!platformSupport.data) return;
+    setForm((current) => ({ ...current, supportWhatsapp: platformSupport.data.supportWhatsapp ?? "", supportPhone: platformSupport.data.supportPhone ?? "", supportEmail: platformSupport.data.supportEmail ?? "" }));
+  }, [platformSupport.data]);
 
   if (employer.isLoading || me.isLoading) return <p className="text-slate-500">Loading company details...</p>;
   if (!employer.data) return <p className="text-slate-500">Company details are unavailable.</p>;
@@ -112,7 +118,7 @@ export default function EmployerSettingsPage() {
       ["Contact phone", employer.data.contactPhone], ["Contact email", employer.data.contactEmail],
       ["Timezone", employer.data.timezone],
     ];
-    return <div><h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1><div className="card max-w-lg space-y-4"><p className="text-sm text-slate-600">Company details are managed by the FieldFace administrator. Contact admin if anything needs to change.</p><div className="divide-y divide-slate-100">{fields.map(([label, value]) => <div key={label} className="py-3 first:pt-0 last:pb-0"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="text-slate-800 mt-1">{value || "Not provided"}</p></div>)}</div><p className="text-xs text-slate-500">UIF settings are also controlled by the administrator.</p></div><div className="card max-w-lg mt-4 space-y-3"><div><p className="font-semibold text-slate-800">Client support</p><p className="text-xs text-slate-500 mt-1">These contacts appear on the public welcome screen.</p></div><label className="text-xs text-slate-500">WhatsApp number<input className="input-field mt-1" value={form.supportWhatsapp} onChange={(e) => setField("supportWhatsapp", e.target.value)} placeholder="e.g. +27 71 234 5678" /></label><label className="text-xs text-slate-500">Phone number<input className="input-field mt-1" value={form.supportPhone} onChange={(e) => setField("supportPhone", e.target.value)} placeholder="e.g. +27 11 234 5678" /></label><label className="text-xs text-slate-500">Support email<input className="input-field mt-1" type="email" value={form.supportEmail} onChange={(e) => setField("supportEmail", e.target.value)} placeholder="support@yourcompany.com" /></label><button className="btn-primary" onClick={saveSupport} disabled={updateSupport.isPending}>{updateSupport.isPending ? "Saving..." : "Save support contacts"}</button>{updateSupport.error && <p className="text-sm text-red-600">{updateSupport.error.message}</p>}{saved && <p className="text-sm text-emerald-700">Saved.</p>}</div></div>;
+    return <div><h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1><div className="card max-w-lg space-y-4"><p className="text-sm text-slate-600">Company details are managed by the FieldFace administrator. Contact admin if anything needs to change.</p><div className="divide-y divide-slate-100">{fields.map(([label, value]) => <div key={label} className="py-3 first:pt-0 last:pb-0"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="text-slate-800 mt-1">{value || "Not provided"}</p></div>)}</div><p className="text-xs text-slate-500">UIF settings are also controlled by the administrator.</p></div></div>;
   }
 
   return (

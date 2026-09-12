@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 
@@ -46,6 +47,7 @@ const FEATURES = [
 
 export default function WelcomeScreen() {
   const support = trpc.employers.getPublicSupport.useQuery();
+  const [supportOpen, setSupportOpen] = useState(false);
   const whatsappNumber = support.data?.supportWhatsapp?.replace(/[^\d]/g, "");
   const phoneNumber = support.data?.supportPhone?.replace(/[^\d+]/g, "");
 
@@ -70,14 +72,14 @@ export default function WelcomeScreen() {
         </div>
 
         <section className="card mb-10" aria-labelledby="support-heading">
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Need help?</p>
-          <h2 id="support-heading" className="font-semibold text-slate-800 mt-1">Client support</h2>
-          <p className="text-xs text-slate-500 mt-1">Contact {support.data?.name ?? "your support team"} directly.</p>
-          <div className="grid grid-cols-3 gap-2 mt-4">
+          <button type="button" className="w-full text-left" onClick={() => setSupportOpen((open) => !open)} aria-expanded={supportOpen}>
+            <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Need help?</p><h2 id="support-heading" className="font-semibold text-slate-800 mt-1">FieldFace support</h2><p className="text-xs text-slate-500 mt-1">Contact the FieldFace team about listing your company.</p></div><span className="text-emerald-700 text-xl" aria-hidden="true">{supportOpen ? "−" : "+"}</span></div>
+          </button>
+          {supportOpen && <div className="grid grid-cols-3 gap-2 mt-4">
             {whatsappNumber ? <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-700 text-white text-center font-semibold text-sm py-3">WhatsApp</a> : <span className="rounded-xl bg-slate-100 text-slate-400 text-center font-semibold text-sm py-3">WhatsApp unavailable</span>}
             {phoneNumber ? <a href={`tel:${phoneNumber}`} className="rounded-xl border border-slate-300 text-slate-700 text-center font-semibold text-sm py-3">Call</a> : <span className="rounded-xl bg-slate-100 text-slate-400 text-center font-semibold text-sm py-3">Call unavailable</span>}
             {support.data?.supportEmail ? <a href={`mailto:${support.data.supportEmail}`} className="rounded-xl border border-slate-300 text-slate-700 text-center font-semibold text-sm py-3">Email support</a> : <span className="rounded-xl bg-slate-100 text-slate-400 text-center font-semibold text-sm py-3">Email unavailable</span>}
-          </div>
+          </div>}
         </section>
 
         <p className="text-center text-xs font-semibold tracking-wide text-slate-400 mb-4">HOW A SHIFT IS RECORDED</p>

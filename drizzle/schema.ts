@@ -53,6 +53,9 @@ export const platformAdmins = pgTable("platform_admins", {
   id: uuid("id").primaryKey(), // matches supabase auth.users.id
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
+  supportWhatsapp: text("support_whatsapp"),
+  supportPhone: text("support_phone"),
+  supportEmail: text("support_email"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
