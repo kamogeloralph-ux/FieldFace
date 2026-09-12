@@ -73,7 +73,7 @@ export default function WelcomeScreen() {
 
         <section className="card mb-10" aria-labelledby="support-heading">
           <button type="button" className="w-full text-left" onClick={() => setSupportOpen((open) => !open)} aria-expanded={supportOpen}>
-            <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Need help?</p><h2 id="support-heading" className="font-semibold text-slate-800 mt-1">FieldFace support</h2><p className="text-xs text-slate-500 mt-1">Contact the FieldFace team about listing your company.</p></div><span className="text-emerald-700 text-xl" aria-hidden="true">{supportOpen ? "−" : "+"}</span></div>
+            <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Need help?</p><h2 id="support-heading" className="font-semibold text-slate-800 mt-1">FieldFace support</h2><p className="text-xs text-slate-500 mt-1">Contact the FieldFace team to list your company or get help with your existing account.</p></div><span className="text-emerald-700 text-xl" aria-hidden="true">{supportOpen ? "−" : "+"}</span></div>
           </button>
           {supportOpen && <div className="grid grid-cols-3 gap-2 mt-4">
             {whatsappNumber ? <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-700 text-white text-center font-semibold text-sm py-3">WhatsApp</a> : <span className="rounded-xl bg-slate-100 text-slate-400 text-center font-semibold text-sm py-3">WhatsApp unavailable</span>}
