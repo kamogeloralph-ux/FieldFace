@@ -80,7 +80,7 @@ export default function CompaniesPage() {
     setBusyId(employerId);
     try {
       await impersonate.mutateAsync({ employerId });
-      window.location.assign("/company");
+      window.location.assign("/company/employer");
     } catch (error) {
       setBusyId(null);
       alert(error instanceof Error ? error.message : "Could not open the company dashboard.");
