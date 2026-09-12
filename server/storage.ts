@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -73,6 +73,15 @@ async function deleteObject(bucket: keyof typeof BUCKETS, path: string) {
   await r2.send(new DeleteObjectCommand({ Bucket: BUCKETS[bucket], Key: path }));
 }
 
+async function objectExists(bucket: keyof typeof BUCKETS, path: string) {
+  try {
+    await r2.send(new HeadObjectCommand({ Bucket: BUCKETS[bucket], Key: path }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function uploadSelfie(employeeId: string, dataUrl: string): Promise<string> {
   const { buffer, contentType } = decodeDataUrl(dataUrl);
   validateImage(buffer);
@@ -108,8 +117,19 @@ export async function uploadSchedule(employerId: string, dataUrl: string, origin
   const { buffer, contentType } = decodeScheduleDataUrl(dataUrl);
   const safeName = originalName.replace(/[^a-z0-9._-]+/gi, "-").slice(-80) || "schedule";
   const path = `${employerId}/${Date.now()}-${safeName}`;
-  await putObject("schedules", path, buffer, contentType);
+  try {
+    await putObject("schedules", path, buffer, contentType);
+  } catch (error) {
+    // A legacy R2 key may not have access to the optional dedicated bucket.
+    // Keep schedules usable by falling back to the existing authorized bucket.
+    await putObject("site-photos", path, buffer, contentType).catch(() => { throw error; });
+  }
   return { path, contentType };
+}
+
+export async function signedScheduleUrl(path: string, contentType?: string, expiresInSeconds = 900) {
+  const bucket = await objectExists("schedules", path) ? "schedules" : "site-photos";
+  return signedUrl(bucket, path, expiresInSeconds, contentType);
 }
 
 export async function removeSchedule(path: string) {
@@ -139,7 +159,13 @@ export async function signedUrl(
   bucket: "selfies" | "site-photos" | "payslips" | "schedules" | "sick-notes",
   path: string,
   expiresInSeconds = 3600,
+  responseContentType?: string,
 ): Promise<string> {
-  const command = new GetObjectCommand({ Bucket: BUCKETS[bucket], Key: path });
+  const command = new GetObjectCommand({
+    Bucket: BUCKETS[bucket],
+    Key: path,
+    ResponseContentType: responseContentType || undefined,
+    ResponseContentDisposition: "inline",
+  });
   return getSignedUrl(r2, command, { expiresIn: expiresInSeconds });
 }

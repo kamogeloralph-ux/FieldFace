@@ -3,7 +3,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import { companyDeductionEmployees, companyDeductions, employees, employers } from "../../drizzle/schema";
 import { adminProcedure, employeeProcedure, ownerProcedure, platformProcedure, router } from "../trpc";
-import { removeSchedule, signedUrl, uploadSchedule } from "../storage";
+import { removeSchedule, signedScheduleUrl, uploadSchedule } from "../storage";
 
 export const employersRouter = router({
   getMine: adminProcedure.query(async ({ ctx }) => {
@@ -14,13 +14,13 @@ export const employersRouter = router({
   getSchedule: employeeProcedure.query(async ({ ctx }) => {
     const [employer] = await db.select({ schedulePath: employers.schedulePath, scheduleName: employers.scheduleName, scheduleContentType: employers.scheduleContentType, scheduleUpdatedAt: employers.scheduleUpdatedAt }).from(employers).where(eq(employers.id, ctx.employee.employerId));
     if (!employer?.schedulePath) return null;
-    return { name: employer.scheduleName ?? "Company schedule", contentType: employer.scheduleContentType, updatedAt: employer.scheduleUpdatedAt, url: await signedUrl("schedules", employer.schedulePath, 900) };
+    return { name: employer.scheduleName ?? "Company schedule", contentType: employer.scheduleContentType, updatedAt: employer.scheduleUpdatedAt, url: await signedScheduleUrl(employer.schedulePath, employer.scheduleContentType ?? undefined) };
   }),
 
   getScheduleAdmin: adminProcedure.query(async ({ ctx }) => {
     const [employer] = await db.select({ schedulePath: employers.schedulePath, scheduleName: employers.scheduleName, scheduleContentType: employers.scheduleContentType, scheduleUpdatedAt: employers.scheduleUpdatedAt }).from(employers).where(eq(employers.id, ctx.admin.employerId));
     if (!employer?.schedulePath) return null;
-    return { name: employer.scheduleName ?? "Company schedule", contentType: employer.scheduleContentType, updatedAt: employer.scheduleUpdatedAt, url: await signedUrl("schedules", employer.schedulePath, 900) };
+    return { name: employer.scheduleName ?? "Company schedule", contentType: employer.scheduleContentType, updatedAt: employer.scheduleUpdatedAt, url: await signedScheduleUrl(employer.schedulePath, employer.scheduleContentType ?? undefined) };
   }),
 
   uploadSchedule: adminProcedure
