@@ -99,7 +99,7 @@ export default function EmployerSettingsPage() {
       ["Contact phone", employer.data.contactPhone], ["Contact email", employer.data.contactEmail],
       ["Timezone", employer.data.timezone],
     ];
-    return <div><h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1><div className="card max-w-lg space-y-4"><p className="text-sm text-slate-600">Company details are managed by the FieldFace administrator. Contact admin if anything needs to change.</p><div className="divide-y divide-slate-100">{fields.map(([label, value]) => <div key={label} className="py-3 first:pt-0 last:pb-0"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="text-slate-800 mt-1">{value || "Not provided"}</p></div>)}</div><p className="text-xs text-slate-500">UIF settings are also controlled by the administrator.</p></div><ScheduleSection /></div>;
+    return <div><h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1><div className="card max-w-lg space-y-4"><p className="text-sm text-slate-600">Company details are managed by the FieldFace administrator. Contact admin if anything needs to change.</p><div className="divide-y divide-slate-100">{fields.map(([label, value]) => <div key={label} className="py-3 first:pt-0 last:pb-0"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="text-slate-800 mt-1">{value || "Not provided"}</p></div>)}</div><p className="text-xs text-slate-500">UIF settings are also controlled by the administrator.</p></div></div>;
   }
 
   return (
@@ -107,7 +107,6 @@ export default function EmployerSettingsPage() {
       <h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1>
       <div className="card max-w-2xl space-y-4">
         <p className="text-sm text-emerald-700">Platform administrator mode: you can edit this company.</p>
-        <ScheduleSection />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="text-xs text-slate-500">Company name<input className="input-field mt-1" value={form.name} onChange={(e) => setField("name", e.target.value)} /></label>
           <label className="text-xs text-slate-500">Tax number<input className="input-field mt-1" value={form.taxNumber} onChange={(e) => setField("taxNumber", e.target.value)} /></label>
@@ -124,23 +123,4 @@ export default function EmployerSettingsPage() {
       </div>
     </div>
   );
-}
-
-function ScheduleSection() {
-  const utils = trpc.useUtils();
-  const schedule = trpc.employers.getScheduleAdmin.useQuery();
-  const upload = trpc.employers.uploadSchedule.useMutation({ onSuccess: () => utils.employers.getScheduleAdmin.invalidate() });
-  const remove = trpc.employers.removeSchedule.useMutation({ onSuccess: () => utils.employers.getScheduleAdmin.invalidate() });
-
-  async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { alert("Schedule files must be 10 MB or smaller."); return; }
-    const reader = new FileReader();
-    reader.onload = () => upload.mutate({ dataUrl: String(reader.result), fileName: file.name });
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  }
-
-  return <div className="border-t border-slate-100 pt-4 space-y-3"><div><p className="font-semibold text-slate-800">Company schedule</p><p className="text-xs text-slate-500 mt-1">Upload a PDF, JPEG, or PNG schedule. Every logged-in employee can view the current schedule.</p></div>{schedule.data ? <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3"><a href={schedule.data.url} target="_blank" rel="noreferrer" className="text-sm text-emerald-700 underline truncate">{schedule.data.name}</a><button type="button" className="text-sm text-red-600 underline" onClick={() => { if (confirm("Remove the company schedule? Employees will no longer see it.")) remove.mutate(); }} disabled={remove.isPending}>Remove</button></div> : <p className="text-sm text-slate-400">No schedule uploaded.</p>}<label className="btn-secondary block text-center cursor-pointer">{upload.isPending ? "Uploading..." : schedule.data ? "Replace schedule" : "Upload schedule"}<input className="sr-only" type="file" accept="application/pdf,image/jpeg,image/png" onChange={onFileChange} disabled={upload.isPending} /></label>{upload.error && <p className="text-sm text-red-600">{upload.error.message}</p>}</div>;
 }

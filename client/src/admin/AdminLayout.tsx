@@ -8,6 +8,7 @@ const NAV = [
   { to: "/company/sites", label: "Sites" },
   { to: "/company/payslips", label: "Payslips" },
   { to: "/company/leave", label: "Leave Requests" },
+  { to: "/company/schedule", label: "Schedule" },
   { to: "/company/employer", label: "Employer Settings" },
 ];
 

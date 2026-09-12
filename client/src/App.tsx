@@ -14,6 +14,7 @@ import SitesPage from "./admin/SitesPage";
 import PayslipsPage from "./admin/PayslipsPage";
 import EmployerSettingsPage from "./admin/EmployerSettingsPage";
 import LeaveRequestsPage from "./admin/LeaveRequestsPage";
+import SchedulePage from "./admin/SchedulePage";
 import PolicyPage from "./pages/PolicyPage";
 import LeaveRequestPage from "./pages/LeaveRequestPage";
 
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="sites" element={<SitesPage />} />
         <Route path="payslips" element={<PayslipsPage />} />
         <Route path="leave" element={<LeaveRequestsPage />} />
+        <Route path="schedule" element={<SchedulePage />} />
         <Route path="employer" element={<EmployerSettingsPage />} />
       </Route>
 
