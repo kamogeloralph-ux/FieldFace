@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../db";
-import { adminUsers, employees, employers, platformAdmins, sites } from "../../drizzle/schema";
+import { employees, employers, platformAdmins, sites } from "../../drizzle/schema";
 import { publicProcedure, platformProcedure, router } from "../trpc";
 import {
   clearPlatformSession,
@@ -121,37 +121,8 @@ export const platformRouter = router({
       const [employer] = await db.select().from(employers).where(eq(employers.id, input.employerId));
       if (!employer) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
 
-      let [profile] = await db
-        .select()
-        .from(adminUsers)
-        .where(eq(adminUsers.id, ctx.platform.platformAdminId));
-
-      // Platform owners don't necessarily have a per-company admin row yet;
-      // create one scoped to this company so they can manage it directly.
-      if (!profile || profile.employerId !== input.employerId) {
-        const [platformProfile] = await db
-          .select()
-          .from(platformAdmins)
-          .where(eq(platformAdmins.id, ctx.platform.platformAdminId));
-
-        [profile] = await db
-          .insert(adminUsers)
-          .values({
-            id: ctx.platform.platformAdminId,
-            employerId: input.employerId,
-            fullName: platformProfile?.fullName ?? "Platform owner",
-            email: platformProfile?.email ?? "",
-            role: "owner",
-          })
-          .onConflictDoUpdate({
-            target: adminUsers.id,
-            set: { employerId: input.employerId, role: "owner" },
-          })
-          .returning();
-      }
-
       issueAdminSession(ctx.res, {
-        adminUserId: profile.id,
+        adminUserId: ctx.platform.platformAdminId,
         employerId: input.employerId,
         role: "owner",
       });

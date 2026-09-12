@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
-import { adminUsers, employees, employers } from "../../drizzle/schema";
+import { adminUsers, employees, employers, platformAdmins } from "../../drizzle/schema";
 import { publicProcedure, router } from "../trpc";
 import {
   clearAdminSession,
@@ -133,6 +133,18 @@ export const authRouter = router({
   adminMe: publicProcedure.query(async ({ ctx }) => {
     if (!ctx.admin) return null;
     const [profile] = await db.select().from(adminUsers).where(eq(adminUsers.id, ctx.admin.adminUserId));
+    if (!profile && ctx.platform?.platformAdminId === ctx.admin.adminUserId) {
+      const [platformProfile] = await db.select().from(platformAdmins).where(eq(platformAdmins.id, ctx.platform.platformAdminId));
+      const [employer] = await db.select().from(employers).where(eq(employers.id, ctx.admin.employerId));
+      if (!platformProfile || !employer) return null;
+      return {
+        id: platformProfile.id,
+        fullName: platformProfile.fullName,
+        email: platformProfile.email,
+        role: "owner" as const,
+        employer: { id: employer.id, name: employer.name },
+      };
+    }
     if (!profile) return null;
     const [employer] = await db.select().from(employers).where(eq(employers.id, profile.employerId));
     return {
