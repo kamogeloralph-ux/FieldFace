@@ -59,6 +59,8 @@ export const platformRouter = router({
         createdAt: employers.createdAt,
         employeeCount: sql<number>`(select count(*) from ${employees} where ${employees.employerId} = ${employers.id})`,
         siteCount: sql<number>`(select count(*) from ${sites} where ${sites.employerId} = ${employers.id})`,
+        orphanEmployeeCount: sql<number>`(select count(*) from ${employees} e where not exists (select 1 from ${employers} owner where owner.id = e.employer_id))`,
+        orphanSiteCount: sql<number>`(select count(*) from ${sites} s where not exists (select 1 from ${employers} owner where owner.id = s.employer_id))`,
       })
       .from(employers)
       .orderBy(employers.createdAt);
@@ -111,6 +113,20 @@ export const platformRouter = router({
         await writeAudit({ actorType: "platform_admin", actorId: ctx.platform.platformAdminId, employerId: target.id, action: "company.data_merged", entityType: "employer", entityId: target.id, metadata: { sourceEmployerId: source.id } });
         return { success: true as const };
       });
+    }),
+
+  adoptUnlinkedData: platformProcedure
+    .input(z.object({ employerId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [target] = await db.select({ id: employers.id }).from(employers).where(eq(employers.id, input.employerId));
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Company record not found." });
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`update ${sites} set employer_id = ${input.employerId} where not exists (select 1 from ${employers} owner where owner.id = ${sites}.employer_id)`);
+        await tx.execute(sql`update ${employees} set employer_id = ${input.employerId} where not exists (select 1 from ${employers} owner where owner.id = ${employees}.employer_id)`);
+        await tx.execute(sql`update ${payslips} set employer_id = ${input.employerId} where not exists (select 1 from ${employers} owner where owner.id = ${payslips}.employer_id)`);
+      });
+      await writeAudit({ actorType: "platform_admin", actorId: ctx.platform.platformAdminId, employerId: input.employerId, action: "company.orphan_data_adopted", entityType: "employer", entityId: input.employerId });
+      return { success: true as const };
     }),
 
   listCompanyEmployees: platformProcedure
