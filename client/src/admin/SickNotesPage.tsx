@@ -1,0 +1,11 @@
+import { useState } from "react";
+import { trpc } from "../lib/trpc";
+
+export default function SickNotesPage() {
+  const utils = trpc.useUtils();
+  const notes = trpc.sickNotes.listForManagement.useQuery();
+  const review = trpc.sickNotes.review.useMutation({ onSuccess: () => utils.sickNotes.listForManagement.invalidate() });
+  const [notesById, setNotesById] = useState<Record<string, string>>({});
+
+  return <div><div className="flex items-center justify-between mb-5"><div><h1 className="text-xl font-bold text-slate-800">Sick notes</h1><p className="text-sm text-slate-500 mt-1">Review sick-note documents submitted by employees.</p></div><button className="btn-secondary w-auto px-3 py-2 text-sm" onClick={() => notes.refetch()} disabled={notes.isFetching}>{notes.isFetching ? "Refreshing..." : "Refresh"}</button></div><div className="space-y-3">{notes.data?.map((note) => <div className="card" key={note.id}><div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3"><div><p className="font-semibold text-slate-800">{note.employeeName} <span className="text-xs font-normal text-slate-500">#{note.employeeCode}</span></p><a href={note.url} target="_blank" rel="noreferrer" className="text-sm text-emerald-700 underline block mt-1 truncate">{note.fileName}</a>{note.noteDate && <p className="text-xs text-slate-500 mt-1">Note date: {note.noteDate}</p>}{note.employeeComment && <p className="text-sm text-slate-600 mt-2">Employee: {note.employeeComment}</p>}</div><span className={`self-start text-xs font-semibold ${note.status === "reviewed" ? "text-emerald-700" : "text-amber-700"}`}>{note.status}</span></div>{note.status === "submitted" ? <div className="mt-3 space-y-2"><textarea className="input-field min-h-16" placeholder="Optional review note" value={notesById[note.id] ?? ""} onChange={(e) => setNotesById((current) => ({ ...current, [note.id]: e.target.value }))} maxLength={500} /><button className="btn-primary sm:w-auto px-4 py-2" disabled={review.isPending} onClick={() => review.mutate({ id: note.id, managerNote: notesById[note.id] })}>Mark reviewed</button></div> : note.managerNote && <p className="text-xs text-slate-500 mt-3">Management: {note.managerNote}</p>}</div>)}{notes.data?.length === 0 && <p className="text-sm text-slate-500">No sick notes have been submitted.</p>}</div></div>;
+}

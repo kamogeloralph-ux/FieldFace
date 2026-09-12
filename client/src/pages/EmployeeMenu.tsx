@@ -6,6 +6,7 @@ const LINKS = [
   ["/history", "History"],
   ["/payslips", "Payslips"],
   ["/leave", "Leave"],
+  ["/sick-notes", "Sick notes"],
 ] as const;
 
 export default function EmployeeMenu() {

@@ -8,6 +8,7 @@ import { reportsRouter } from "./routers/reports";
 import { payslipsRouter } from "./routers/payslips";
 import { platformRouter } from "./routers/platform";
 import { leaveRequestsRouter } from "./routers/leaveRequests";
+import { sickNotesRouter } from "./routers/sickNotes";
 
 export const appRouter = router({
   auth: authRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   reports: reportsRouter,
   payslips: payslipsRouter,
   leaveRequests: leaveRequestsRouter,
+  sickNotes: sickNotesRouter,
 });
 
 export type AppRouter = typeof appRouter;

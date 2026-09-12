@@ -20,6 +20,22 @@ create table if not exists public.leave_requests (
   created_at timestamptz not null default now()
 );
 create index if not exists leave_requests_employer_status_idx on public.leave_requests(employer_id, status, start_date);
+create table if not exists public.sick_notes (
+  id uuid primary key default gen_random_uuid(),
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  employee_id uuid not null references public.employees(id) on delete cascade,
+  file_path text not null,
+  file_name text not null,
+  content_type text not null,
+  note_date date,
+  employee_comment text,
+  status text not null default 'submitted',
+  manager_note text,
+  reviewed_by uuid,
+  reviewed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists sick_notes_employer_status_idx on public.sick_notes(employer_id, status, created_at);
 alter table public.time_entries add column if not exists clock_action_id uuid;
 alter table public.time_entries add column if not exists captured_at timestamptz;
 alter table public.time_entries add column if not exists synced_at timestamptz not null default now();

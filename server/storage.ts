@@ -39,6 +39,7 @@ const BUCKETS = {
   // Reuse the existing authorized bucket unless a dedicated schedule bucket
   // has explicitly been provisioned and granted to the R2 key.
   schedules: process.env.R2_BUCKET_SCHEDULES || process.env.R2_BUCKET_SITE_PHOTOS || "fieldface-site-photos",
+  "sick-notes": process.env.R2_BUCKET_SICK_NOTES || process.env.R2_BUCKET_SITE_PHOTOS || "fieldface-site-photos",
 } as const;
 
 /** Decode a `data:image/jpeg;base64,....` string into a Buffer + content type. */
@@ -115,6 +116,14 @@ export async function removeSchedule(path: string) {
   await deleteObject("schedules", path);
 }
 
+export async function uploadSickNote(employeeId: string, dataUrl: string, originalName: string): Promise<{ path: string; contentType: string }> {
+  const { buffer, contentType } = decodeScheduleDataUrl(dataUrl);
+  const safeName = originalName.replace(/[^a-z0-9._-]+/gi, "-").slice(-80) || "sick-note";
+  const path = `${employeeId}/${Date.now()}-${safeName}`;
+  await putObject("sick-notes", path, buffer, contentType);
+  return { path, contentType };
+}
+
 export async function uploadPayslipPdf(
   employeeId: string,
   year: number,
@@ -127,7 +136,7 @@ export async function uploadPayslipPdf(
 }
 
 export async function signedUrl(
-  bucket: "selfies" | "site-photos" | "payslips" | "schedules",
+  bucket: "selfies" | "site-photos" | "payslips" | "schedules" | "sick-notes",
   path: string,
   expiresInSeconds = 3600,
 ): Promise<string> {
