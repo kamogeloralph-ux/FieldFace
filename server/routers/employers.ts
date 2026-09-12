@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, or } from "drizzle-orm";
 import { db } from "../db";
 import { companyDeductionEmployees, companyDeductions, employees, employers, platformAdmins } from "../../drizzle/schema";
 import { adminProcedure, employeeProcedure, ownerProcedure, platformProcedure, publicProcedure, router } from "../trpc";
@@ -7,7 +7,7 @@ import { removeSchedule, signedScheduleUrl, uploadSchedule } from "../storage";
 
 export const employersRouter = router({
   getPublicSupport: publicProcedure.query(async () => {
-    const [support] = await db.select({ supportWhatsapp: platformAdmins.supportWhatsapp, supportPhone: platformAdmins.supportPhone, supportEmail: platformAdmins.supportEmail }).from(platformAdmins).orderBy(platformAdmins.createdAt).limit(1);
+    const [support] = await db.select({ supportWhatsapp: platformAdmins.supportWhatsapp, supportPhone: platformAdmins.supportPhone, supportEmail: platformAdmins.supportEmail }).from(platformAdmins).where(or(isNotNull(platformAdmins.supportWhatsapp), isNotNull(platformAdmins.supportPhone), isNotNull(platformAdmins.supportEmail))).orderBy(platformAdmins.createdAt).limit(1);
     return support ?? null;
   }),
 
