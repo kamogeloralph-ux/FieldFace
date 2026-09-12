@@ -24,6 +24,7 @@ export async function ensureProductionSchema() {
     `alter table public.employers add column if not exists company_code text`,
     `update public.employers set company_code = 'FF-' || upper(substr(replace(id::text, '-', ''), 1, 8)) where company_code is null`,
     `create unique index if not exists employers_company_code_idx on public.employers(company_code)`,
+    `with ranked as (select id, 'FF-' || upper(left(coalesce(nullif(regexp_replace(name, '[^A-Za-z0-9]', '', 'g'), ''), 'CO'), 5)) || lpad(row_number() over (order by created_at, id)::text, 2, '0') as new_code from public.employers) update public.employers e set company_code = r.new_code from ranked r where e.id = r.id and e.company_code ~ '^FF-[0-9A-F]{8}$'`,
     `alter table public.employers add column if not exists tax_number text`,
     `alter table public.employers add column if not exists company_reg_number text`,
     `alter table public.employers add column if not exists uif_enabled boolean not null default false`,

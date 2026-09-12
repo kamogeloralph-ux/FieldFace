@@ -14,6 +14,11 @@ import { writeAudit } from "../audit";
 import { randomBytes, randomUUID } from "node:crypto";
 import { hashPassword } from "../auth";
 
+function companyCodePrefix(name: string) {
+  const letters = name.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return (letters.slice(0, 5) || "CO").padEnd(2, "X");
+}
+
 export const platformRouter = router({
   login: publicProcedure
     .input(z.object({ accessToken: z.string().min(1) }))
@@ -59,9 +64,13 @@ export const platformRouter = router({
   createCompany: platformProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ input }) => {
-      const companyCode = `FF-${randomBytes(4).toString("hex").toUpperCase()}`;
-      const [created] = await db.insert(employers).values({ name: input.name, companyCode }).returning();
-      return created;
+      return db.transaction(async (tx) => {
+        await tx.execute(sql`select pg_advisory_xact_lock(725491)`);
+        const [{ count }] = await tx.select({ count: sql<number>`count(*)` }).from(employers);
+        const companyCode = `FF-${companyCodePrefix(input.name)}${String(Number(count) + 1).padStart(2, "0")}`;
+        const [created] = await tx.insert(employers).values({ name: input.name, companyCode }).returning();
+        return created;
+      });
     }),
 
   createManager: platformProcedure

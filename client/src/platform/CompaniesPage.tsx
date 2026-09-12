@@ -31,6 +31,7 @@ export default function CompaniesPage() {
   const [managerName, setManagerName] = useState("");
   const [managerUsername, setManagerUsername] = useState("");
   const [managerActivationCode, setManagerActivationCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const employees = trpc.platform.listCompanyEmployees.useQuery(
     { employerId: selected?.id ?? "00000000-0000-0000-0000-000000000000" },
     { enabled: !!selected },
@@ -52,6 +53,12 @@ export default function CompaniesPage() {
     setManagerName("");
     setManagerUsername("");
     setManagerActivationCode(result.activationCode);
+  }
+
+  async function copyValue(label: string, value: string) {
+    await navigator.clipboard.writeText(value);
+    setCopied(label);
+    window.setTimeout(() => setCopied(null), 1800);
   }
 
   async function handleManage(employerId: string) {
@@ -80,14 +87,14 @@ export default function CompaniesPage() {
         <select className="input-field" value={managerCompanyId} onChange={(e) => setManagerCompanyId(e.target.value)} required><option value="">Select company</option>{companies.data?.map((c) => <option key={c.id} value={c.id}>{c.name} · {c.companyCode ?? "code pending"}</option>)}</select>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><input className="input-field" placeholder="Full name" value={managerName} onChange={(e) => setManagerName(e.target.value)} required /><input className="input-field" placeholder="Username" value={managerUsername} onChange={(e) => setManagerUsername(e.target.value.toLowerCase())} pattern="[a-z0-9._-]+" required /></div>
         {createManager.error && <p className="text-sm text-red-600">{createManager.error.message}</p>}
-        {managerActivationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Manager activation code</p><p className="font-mono text-lg tracking-widest mt-1">{managerActivationCode}</p><p className="text-xs mt-1">Give this code to the manager with their company code and username. They activate at <strong>/company/activate</strong>. It expires in 48 hours and can be used once.</p></div>}
+        {managerActivationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Manager activation code</p><div className="flex items-center gap-2 mt-1"><p className="font-mono text-lg tracking-widest">{managerActivationCode}</p><button type="button" className="btn-secondary w-auto px-2 py-1 text-xs" onClick={() => void copyValue("manager-code", managerActivationCode)}>{copied === "manager-code" ? "Copied" : "Copy"}</button></div><p className="text-xs mt-1">Give this code to the manager with their company code and username. They activate at <strong>/company/activate</strong>. It expires in 48 hours and can be used once.</p></div>}
         <button className="btn-secondary sm:w-auto px-4" type="submit" disabled={createManager.isPending}>{createManager.isPending ? "Creating..." : "Create manager login"}</button>
       </form>
 
       <div className="space-y-2">
         {companies.data?.map((c) => (
           <div key={c.id} className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="font-semibold text-slate-800">{c.name}</p><p className="text-xs font-semibold text-emerald-700 mt-1">Company code: {c.companyCode ?? "Pending"}</p><p className="text-xs text-slate-500">{c.employeeCount} employee{c.employeeCount === 1 ? "" : "s"} · {c.siteCount} site{c.siteCount === 1 ? "" : "s"}{c.contactEmail ? ` · ${c.contactEmail}` : ""}</p></div>
+            <div><p className="font-semibold text-slate-800">{c.name}</p><div className="flex items-center gap-2 mt-1"><p className="text-xs font-semibold text-emerald-700">Company code: {c.companyCode ?? "Pending"}</p>{c.companyCode && <button type="button" className="btn-secondary w-auto px-2 py-1 text-xs" onClick={() => void copyValue(`company-${c.id}`, c.companyCode!)}>{copied === `company-${c.id}` ? "Copied" : "Copy"}</button>}</div><p className="text-xs text-slate-500">{c.employeeCount} employee{c.employeeCount === 1 ? "" : "s"} · {c.siteCount} site{c.siteCount === 1 ? "" : "s"}{c.contactEmail ? ` · ${c.contactEmail}` : ""}</p></div>
             <div className="flex flex-wrap gap-3">
               <button className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => setSelected(c)}>Edit employee rates</button>
               <button type="button" className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => void handleManage(c.id)} disabled={busyId === c.id || impersonate.isPending} aria-busy={busyId === c.id}>

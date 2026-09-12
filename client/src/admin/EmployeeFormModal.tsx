@@ -57,6 +57,7 @@ export default function EmployeeFormModal({
   const [form, setForm] = useState<EmployeeFormValues>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [activationCode, setActivationCode] = useState<string | null>(null);
+  const [activationCopied, setActivationCopied] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -180,7 +181,7 @@ export default function EmployeeFormModal({
 
         {!isEditing && <p className="text-xs text-slate-500">The employee will create their own PIN using the one-time activation code shown after saving.</p>}
         {error && <p className="text-red-600 text-sm">{error}</p>}
-        {activationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Employee activation code</p><p className="font-mono text-lg tracking-widest mt-1">{activationCode}</p><p className="text-xs mt-1">Give this code to the employee. They activate at <strong>/activate</strong>. It expires in 48 hours and can be used once.</p></div>}
+        {activationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Employee activation code</p><div className="flex items-center gap-2 mt-1"><p className="font-mono text-lg tracking-widest">{activationCode}</p><button type="button" className="btn-secondary w-auto px-2 py-1 text-xs" onClick={() => { void navigator.clipboard.writeText(activationCode); setActivationCopied(true); window.setTimeout(() => setActivationCopied(false), 1800); }}>{activationCopied ? "Copied" : "Copy"}</button></div><p className="text-xs mt-1">Give this code to the employee. They activate at <strong>/activate</strong>. It expires in 48 hours and can be used once.</p></div>}
 
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4">
           <div className="max-w-xl mx-auto flex gap-3">
