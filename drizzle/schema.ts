@@ -17,6 +17,7 @@ import {
 export const employers = pgTable("employers", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  companyCode: text("company_code").unique(),
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   supportWhatsapp: text("support_whatsapp"),
@@ -65,6 +66,8 @@ export const adminUsers = pgTable("admin_users", {
   employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
+  username: text("username"),
+  passwordHash: text("password_hash"),
   role: text("role", { enum: ["owner", "supervisor"] }).notNull().default("supervisor"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

@@ -4,6 +4,7 @@ import { trpc } from "../lib/trpc";
 type Company = {
   id: string;
   name: string;
+  companyCode: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   address: string | null;
@@ -20,11 +21,16 @@ export default function CompaniesPage() {
   const utils = trpc.useUtils();
   const companies = trpc.platform.listCompanies.useQuery();
   const createCompany = trpc.platform.createCompany.useMutation({ onSuccess: () => utils.platform.listCompanies.invalidate() });
+  const createManager = trpc.platform.createManager.useMutation();
   const deleteCompany = trpc.platform.deleteCompany.useMutation({ onSuccess: () => utils.platform.listCompanies.invalidate() });
   const impersonate = trpc.platform.impersonateCompany.useMutation();
   const [newName, setNewName] = useState("");
   const [selected, setSelected] = useState<Company | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [managerCompanyId, setManagerCompanyId] = useState("");
+  const [managerName, setManagerName] = useState("");
+  const [managerUsername, setManagerUsername] = useState("");
+  const [managerPassword, setManagerPassword] = useState("");
   const employees = trpc.platform.listCompanyEmployees.useQuery(
     { employerId: selected?.id ?? "00000000-0000-0000-0000-000000000000" },
     { enabled: !!selected },
@@ -37,6 +43,15 @@ export default function CompaniesPage() {
     if (!newName.trim()) return;
     await createCompany.mutateAsync({ name: newName.trim() });
     setNewName("");
+  }
+
+  async function handleCreateManager(e: React.FormEvent) {
+    e.preventDefault();
+    if (!managerCompanyId || !managerName.trim() || !managerUsername.trim() || !managerPassword) return;
+    await createManager.mutateAsync({ employerId: managerCompanyId, fullName: managerName.trim(), username: managerUsername.trim().toLowerCase(), password: managerPassword });
+    setManagerName("");
+    setManagerUsername("");
+    setManagerPassword("");
   }
 
   async function handleManage(employerId: string) {
@@ -60,10 +75,18 @@ export default function CompaniesPage() {
         <button className="btn-primary sm:w-auto px-4" type="submit" disabled={createCompany.isPending}>{createCompany.isPending ? "Adding..." : "+ Add company"}</button>
       </form>
 
+      <form onSubmit={handleCreateManager} className="card max-w-2xl space-y-3 mb-5">
+        <div><p className="font-semibold text-slate-800">Add company manager</p><p className="text-xs text-slate-500 mt-1">Each manager receives a separate username and password. They sign in with the company code shown below.</p></div>
+        <select className="input-field" value={managerCompanyId} onChange={(e) => setManagerCompanyId(e.target.value)} required><option value="">Select company</option>{companies.data?.map((c) => <option key={c.id} value={c.id}>{c.name} · {c.companyCode ?? "code pending"}</option>)}</select>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><input className="input-field" placeholder="Full name" value={managerName} onChange={(e) => setManagerName(e.target.value)} required /><input className="input-field" placeholder="Username" value={managerUsername} onChange={(e) => setManagerUsername(e.target.value.toLowerCase())} pattern="[a-z0-9._-]+" required /><input className="input-field" type="password" minLength={8} placeholder="Password (8+ chars)" value={managerPassword} onChange={(e) => setManagerPassword(e.target.value)} required /></div>
+        {createManager.error && <p className="text-sm text-red-600">{createManager.error.message}</p>}
+        <button className="btn-secondary sm:w-auto px-4" type="submit" disabled={createManager.isPending}>{createManager.isPending ? "Creating..." : "Create manager login"}</button>
+      </form>
+
       <div className="space-y-2">
         {companies.data?.map((c) => (
           <div key={c.id} className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="font-semibold text-slate-800">{c.name}</p><p className="text-xs text-slate-500">{c.employeeCount} employee{c.employeeCount === 1 ? "" : "s"} · {c.siteCount} site{c.siteCount === 1 ? "" : "s"}{c.contactEmail ? ` · ${c.contactEmail}` : ""}</p></div>
+            <div><p className="font-semibold text-slate-800">{c.name}</p><p className="text-xs font-semibold text-emerald-700 mt-1">Company code: {c.companyCode ?? "Pending"}</p><p className="text-xs text-slate-500">{c.employeeCount} employee{c.employeeCount === 1 ? "" : "s"} · {c.siteCount} site{c.siteCount === 1 ? "" : "s"}{c.contactEmail ? ` · ${c.contactEmail}` : ""}</p></div>
             <div className="flex flex-wrap gap-3">
               <button className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => setSelected(c)}>Edit employee rates</button>
               <button type="button" className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => void handleManage(c.id)} disabled={busyId === c.id || impersonate.isPending} aria-busy={busyId === c.id}>

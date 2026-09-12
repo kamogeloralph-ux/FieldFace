@@ -9,7 +9,7 @@ import {
   issueAdminSession,
   issueEmployeeSessionWithPreference,
   verifyPin,
-  verifySupabaseAccessToken,
+  verifyPassword,
 } from "../auth";
 import { TRPCError } from "@trpc/server";
 
@@ -41,14 +41,14 @@ function isLoginBlocked(key: string) {
 export const authRouter = router({
   // --- Employee (mobile clocking app) ---
   employeeLogin: publicProcedure
-    .input(z.object({ employeeCode: z.string().min(1), pin: z.string().min(4).max(8), rememberMe: z.boolean().default(false) }))
+    .input(z.object({ companyCode: z.string().min(1), employeeCode: z.string().min(1), pin: z.string().min(4).max(8), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
-      const failureKey = loginKey(ctx.req.ip, input.employeeCode);
+      const failureKey = loginKey(ctx.req.ip, `${input.companyCode}:${input.employeeCode}`);
       if (isLoginBlocked(failureKey)) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many failed attempts. Try again in 15 minutes." });
-      const [employee] = await db
-        .select()
-        .from(employees)
-        .where(and(eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true)));
+      const [employee] = await db.select({ employee: employees }).from(employees)
+        .innerJoin(employers, eq(employees.employerId, employers.id))
+        .where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true)))
+        .then((rows) => rows.map((row) => row.employee));
 
       if (!employee) {
         recordLoginFailure(failureKey);
@@ -95,25 +95,13 @@ export const authRouter = router({
 
   // --- Admin / supervisor (admin.html) ---
   adminLogin: publicProcedure
-    .input(z.object({ accessToken: z.string().min(1) }))
+    .input(z.object({ companyCode: z.string().min(1), username: z.string().min(1), password: z.string().min(8) }))
     .mutation(async ({ ctx, input }) => {
-      const user = await verifySupabaseAccessToken(input.accessToken);
-      if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid session, please sign in again." });
-
-      const [profile] = await db.select().from(adminUsers).where(eq(adminUsers.id, user.id));
-      if (!profile) {
-        const [platformProfile] = await db.select({ id: platformAdmins.id }).from(platformAdmins).where(eq(platformAdmins.id, user.id));
-        if (platformProfile) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "This is a platform-owner account. Sign in through the Owner Platform portal at /admin.html, not the company management portal.",
-          });
-        }
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "This account isn't set up as a supervisor. Ask the platform owner to add you.",
-        });
-      }
+      const [result] = await db.select({ profile: adminUsers, companyCode: employers.companyCode }).from(adminUsers)
+        .innerJoin(employers, eq(adminUsers.employerId, employers.id))
+        .where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(adminUsers.username, input.username.trim().toLowerCase())));
+      if (!result?.profile.passwordHash || !(await verifyPassword(input.password, result.profile.passwordHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Company code, username, or password is incorrect." });
+      const profile = result.profile;
 
       issueAdminSession(ctx.res, {
         adminUserId: profile.id,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { adminUsers, employees, employers, payslips, platformAdmins, sites } from "../../drizzle/schema";
 import { publicProcedure, platformProcedure, router } from "../trpc";
@@ -11,6 +11,8 @@ import {
 } from "../auth";
 import { TRPCError } from "@trpc/server";
 import { writeAudit } from "../audit";
+import { randomBytes, randomUUID } from "node:crypto";
+import { hashPassword } from "../auth";
 
 export const platformRouter = router({
   login: publicProcedure
@@ -45,7 +47,7 @@ export const platformRouter = router({
 
   listCompanies: platformProcedure.query(async () => {
     const [rows, employeeCounts, siteCounts] = await Promise.all([
-      db.select({ id: employers.id, name: employers.name, contactEmail: employers.contactEmail, contactPhone: employers.contactPhone, address: employers.address, taxNumber: employers.taxNumber, companyRegNumber: employers.companyRegNumber, uifEnabled: employers.uifEnabled, uifEmployeeRate: employers.uifEmployeeRate, uifEmployerRate: employers.uifEmployerRate, createdAt: employers.createdAt }).from(employers).orderBy(employers.createdAt),
+      db.select({ id: employers.id, name: employers.name, companyCode: employers.companyCode, contactEmail: employers.contactEmail, contactPhone: employers.contactPhone, address: employers.address, taxNumber: employers.taxNumber, companyRegNumber: employers.companyRegNumber, uifEnabled: employers.uifEnabled, uifEmployeeRate: employers.uifEmployeeRate, uifEmployerRate: employers.uifEmployerRate, createdAt: employers.createdAt }).from(employers).orderBy(employers.createdAt),
       db.select({ employerId: employees.employerId, count: sql<number>`count(*)` }).from(employees).groupBy(employees.employerId),
       db.select({ employerId: sites.employerId, count: sql<number>`count(*)` }).from(sites).groupBy(sites.employerId),
     ]);
@@ -57,7 +59,19 @@ export const platformRouter = router({
   createCompany: platformProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ input }) => {
-      const [created] = await db.insert(employers).values({ name: input.name }).returning();
+      const companyCode = `FF-${randomBytes(4).toString("hex").toUpperCase()}`;
+      const [created] = await db.insert(employers).values({ name: input.name, companyCode }).returning();
+      return created;
+    }),
+
+  createManager: platformProcedure
+    .input(z.object({ employerId: z.string().uuid(), fullName: z.string().min(1), username: z.string().min(3).max(40).regex(/^[a-z0-9._-]+$/), password: z.string().min(8), role: z.enum(["owner", "supervisor"]).default("supervisor") }))
+    .mutation(async ({ input }) => {
+      const [employer] = await db.select({ id: employers.id, companyCode: employers.companyCode }).from(employers).where(eq(employers.id, input.employerId));
+      if (!employer) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
+      const [existing] = await db.select({ id: adminUsers.id }).from(adminUsers).where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.toLowerCase())));
+      if (existing) throw new TRPCError({ code: "CONFLICT", message: "That manager username is already in use for this company." });
+      const [created] = await db.insert(adminUsers).values({ id: randomUUID(), employerId: input.employerId, fullName: input.fullName.trim(), email: `${input.username}@${(employer.companyCode ?? "company").toLowerCase()}.fieldface.local`, username: input.username.toLowerCase(), passwordHash: await hashPassword(input.password), role: input.role }).returning({ id: adminUsers.id, fullName: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role });
       return created;
     }),
 

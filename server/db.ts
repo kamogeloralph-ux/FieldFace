@@ -21,6 +21,9 @@ export const db = drizzle(client, { schema });
 export async function ensureProductionSchema() {
   const statements = [
     `alter table public.employers add column if not exists address text`,
+    `alter table public.employers add column if not exists company_code text`,
+    `update public.employers set company_code = 'FF-' || upper(substr(replace(id::text, '-', ''), 1, 8)) where company_code is null`,
+    `create unique index if not exists employers_company_code_idx on public.employers(company_code)`,
     `alter table public.employers add column if not exists tax_number text`,
     `alter table public.employers add column if not exists company_reg_number text`,
     `alter table public.employers add column if not exists uif_enabled boolean not null default false`,
@@ -52,6 +55,8 @@ export async function ensureProductionSchema() {
     `create table if not exists public.company_deduction_employees (deduction_id uuid not null references public.company_deductions(id) on delete cascade, employee_id uuid not null references public.employees(id) on delete cascade, primary key (deduction_id, employee_id))`,
     `alter table public.payslips add column if not exists deduction_details jsonb not null default '[]'::jsonb`,
     `create table if not exists public.platform_admins (id uuid primary key references auth.users(id) on delete cascade, full_name text not null, email text not null, created_at timestamptz not null default now())`,
+    `alter table public.admin_users add column if not exists username text`,
+    `alter table public.admin_users add column if not exists password_hash text`,
     `alter table public.platform_admins add column if not exists support_whatsapp text`,
     `alter table public.platform_admins add column if not exists support_phone text`,
     `alter table public.platform_admins add column if not exists support_email text`,

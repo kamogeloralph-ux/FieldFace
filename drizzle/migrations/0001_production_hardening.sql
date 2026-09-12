@@ -9,6 +9,11 @@ alter table public.employers add column if not exists schedule_updated_at timest
 alter table public.employers add column if not exists support_whatsapp text;
 alter table public.employers add column if not exists support_phone text;
 alter table public.employers add column if not exists support_email text;
+alter table public.employers add column if not exists company_code text;
+update public.employers set company_code = 'FF-' || upper(substr(replace(id::text, '-', ''), 1, 8)) where company_code is null;
+create unique index if not exists employers_company_code_idx on public.employers(company_code);
+alter table public.admin_users add column if not exists username text;
+alter table public.admin_users add column if not exists password_hash text;
 alter table public.platform_admins add column if not exists support_whatsapp text;
 alter table public.platform_admins add column if not exists support_phone text;
 alter table public.platform_admins add column if not exists support_email text;

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 
 export default function EmployeeLogin() {
+  const [companyCode, setCompanyCode] = useState("");
   const [employeeCode, setEmployeeCode] = useState("");
   const [pin, setPin] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -30,7 +31,7 @@ export default function EmployeeLogin() {
         <div className="flex justify-center mb-6"><div className="brand-lockup"><img src="/fieldface-logo.png" alt="FieldFace" className="h-8 w-auto" /></div></div>
         <p className="eyebrow mb-3">FIELD OPERATIONS, SIMPLIFIED</p>
         <h1 className="text-2xl font-bold text-emerald-900">Employee clock-in</h1>
-        <p className="text-slate-600 mt-1">Enter your employee number and PIN to clock in or out. Your shift can be saved when offline.</p>
+        <p className="text-slate-600 mt-1">Enter your company code, employee number, and PIN to clock in or out. Your shift can be saved when offline.</p>
       </div>
 
       <form
@@ -38,9 +39,13 @@ export default function EmployeeLogin() {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          login.mutate({ employeeCode: employeeCode.trim(), pin, rememberMe });
+          login.mutate({ companyCode: companyCode.trim(), employeeCode: employeeCode.trim(), pin, rememberMe });
         }}
       >
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Company code</label>
+          <input className="input-field uppercase" value={companyCode} onChange={(e) => setCompanyCode(e.target.value.toUpperCase())} required />
+        </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Employee number</label>
           <input
