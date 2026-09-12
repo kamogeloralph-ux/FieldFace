@@ -1,4 +1,4 @@
-const CACHE_NAME = "fieldface-shell-v2";
+const CACHE_NAME = "fieldface-shell-v3";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/fieldface-logo.png", "/fieldface-icon.png"];
 
 self.addEventListener("install", (event) => {
