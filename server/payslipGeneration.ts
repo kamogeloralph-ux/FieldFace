@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
-import { companyDeductions, employees, employers, payslips, shifts } from "../drizzle/schema";
+import { companyDeductionEmployees, companyDeductions, employees, employers, payslips, shifts } from "../drizzle/schema";
 import { computeCompanyDeductions, computePayroll, computeUifDeduction } from "./payroll";
 import { generatePayslipPdf } from "./pdf/payslip";
 import { uploadPayslipPdf } from "./storage";
@@ -23,7 +23,10 @@ export async function generatePayslipForEmployee(
   const totals = computePayroll(periodShifts, employee.hourlyRateWeekday, employee.hourlyRateWeekend);
   const uifDeduction = computeUifDeduction(totals.grossPay, employer.uifEnabled, employer.uifEmployeeRate);
   const configuredDeductions = await db.select().from(companyDeductions).where(and(eq(companyDeductions.employerId, employerId), eq(companyDeductions.active, true)));
-  const deductionDetails = computeCompanyDeductions(totals.grossPay, uifDeduction, configuredDeductions);
+  const selectedAssignments = await db.select().from(companyDeductionEmployees).where(eq(companyDeductionEmployees.employeeId, employee.id));
+  const assignedIds = new Set(selectedAssignments.map((assignment) => assignment.deductionId));
+  const applicableDeductions = configuredDeductions.filter((deduction) => deduction.scope === "all" || assignedIds.has(deduction.id));
+  const deductionDetails = computeCompanyDeductions(totals.grossPay, uifDeduction, applicableDeductions);
   const customDeductions = deductionDetails.reduce((sum, deduction) => sum + deduction.amount, 0);
   const netPay = Math.round((totals.grossPay - uifDeduction - customDeductions) * 100) / 100;
 

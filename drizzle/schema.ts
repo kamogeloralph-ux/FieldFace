@@ -7,6 +7,7 @@ import {
   jsonb,
   numeric,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -34,6 +35,7 @@ export const companyDeductions = pgTable("company_deductions", {
   name: text("name").notNull(),
   type: text("type", { enum: ["fixed", "percentage"] }).notNull(),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  scope: text("scope", { enum: ["all", "selected"] }).notNull().default("all"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -90,6 +92,13 @@ export const employees = pgTable("employees", {
   selfServiceGenPeriod: text("self_service_gen_period"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const companyDeductionEmployees = pgTable("company_deduction_employees", {
+  deductionId: uuid("deduction_id").references(() => companyDeductions.id, { onDelete: "cascade" }).notNull(),
+  employeeId: uuid("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.deductionId, t.employeeId] }),
+}));
 
 // One row per clock-in or clock-out tap, with the evidence captured at that moment.
 export const timeEntries = pgTable("time_entries", {
