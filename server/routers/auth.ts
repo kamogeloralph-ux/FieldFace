@@ -122,7 +122,14 @@ export const authRouter = router({
     .mutation(async ({ ctx, input }) => {
       const [result] = await db.select({ profile: adminUsers }).from(adminUsers)
         .where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.trim().toLowerCase())));
-      if (!result?.profile.passwordHash || !(await verifyPassword(input.password, result.profile.passwordHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Company code, username, or password is incorrect." });
+      if (!result) throw new TRPCError({ code: "UNAUTHORIZED", message: "Username or password is incorrect for the selected company." });
+      if (!result.profile.passwordHash) {
+        if (result.profile.activationCodeHash && result.profile.activationExpiresAt && result.profile.activationExpiresAt > new Date()) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "This manager account has not been activated yet. Use the one-time activation code at /company/activate to create your password." });
+        }
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "This manager account has no active password. Ask the platform owner to issue a new activation code." });
+      }
+      if (!(await verifyPassword(input.password, result.profile.passwordHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Username or password is incorrect for the selected company." });
       const profile = result.profile;
 
       issueAdminSession(ctx.res, {

@@ -78,9 +78,13 @@ export const platformRouter = router({
     .mutation(async ({ input }) => {
       const [employer] = await db.select({ id: employers.id, companyCode: employers.companyCode }).from(employers).where(eq(employers.id, input.employerId));
       if (!employer) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
-      const [existing] = await db.select({ id: adminUsers.id }).from(adminUsers).where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.toLowerCase())));
-      if (existing) throw new TRPCError({ code: "CONFLICT", message: "That manager username is already in use for this company." });
       const activationCode = randomBytes(5).toString("hex").toUpperCase();
+      const [existing] = await db.select({ id: adminUsers.id, passwordHash: adminUsers.passwordHash }).from(adminUsers).where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.toLowerCase())));
+      if (existing?.passwordHash) throw new TRPCError({ code: "CONFLICT", message: "That manager username is already in use for an activated account." });
+      if (existing) {
+        const [updated] = await db.update(adminUsers).set({ fullName: input.fullName.trim(), activationCodeHash: await hashPassword(activationCode), activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000) }).where(eq(adminUsers.id, existing.id)).returning({ id: adminUsers.id, fullName: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role });
+        return { ...updated, activationCode };
+      }
       const [created] = await db.insert(adminUsers).values({ id: randomUUID(), employerId: input.employerId, fullName: input.fullName.trim(), email: `${input.username}@${(employer.companyCode ?? "company").toLowerCase()}.fieldface.local`, username: input.username.toLowerCase(), passwordHash: null, activationCodeHash: await hashPassword(activationCode), activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), role: input.role }).returning({ id: adminUsers.id, fullName: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role });
       return { ...created, activationCode };
     }),
