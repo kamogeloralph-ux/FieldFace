@@ -6,7 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "./routers";
 import { createContext } from "./trpc";
 import { startPayslipCron } from "./cron";
-import { db } from "./db";
+import { db, ensureProductionSchema } from "./db";
 
 const app = express();
 app.disable("x-powered-by");
@@ -74,7 +74,14 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const port = Number(process.env.PORT) || 3001;
-app.listen(port, () => {
-  console.log(`FieldFace server listening on :${port}`);
-  startPayslipCron();
-});
+ensureProductionSchema()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`FieldFace server listening on :${port}`);
+      startPayslipCron();
+    });
+  })
+  .catch((error) => {
+    console.error("FieldFace schema bootstrap failed:", error);
+    process.exit(1);
+  });
