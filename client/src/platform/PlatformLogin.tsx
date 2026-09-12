@@ -17,6 +17,7 @@ export default function PlatformLogin() {
     setError(null);
     setLoading(true);
     try {
+      if (!supabase) throw new Error("Platform owner login is not configured. Add the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY variables to the Railway service and redeploy.");
       const { data, error: supaError } = await supabase.auth.signInWithPassword({ email, password });
       if (supaError || !data.session) {
         throw new Error(supaError?.message ?? "Invalid email or password.");

@@ -1,8 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL as string;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-// Browser-only client using the public anon key. Used exclusively for the
-// admin sign-in form — every other read/write goes through our own tRPC API.
-export const supabase = createClient(url, anonKey);
+// Browser-only client using the public anon key. The public app can render
+// without these values; only management and owner login require them.
+export const supabase: SupabaseClient | null = url && anonKey ? createClient(url, anonKey) : null;
+export const supabaseConfigured = Boolean(supabase);
