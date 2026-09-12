@@ -41,16 +41,18 @@ function isLoginBlocked(key: string) {
 }
 
 export const authRouter = router({
+  listLoginCompanies: publicProcedure.query(async () => {
+    return db.select({ id: employers.id, name: employers.name }).from(employers).orderBy(employers.name);
+  }),
+
   // --- Employee (mobile clocking app) ---
   employeeLogin: publicProcedure
-    .input(z.object({ companyCode: z.string().min(1), employeeCode: z.string().min(1), pin: z.string().min(4).max(8), rememberMe: z.boolean().default(false) }))
+    .input(z.object({ employerId: z.string().uuid(), employeeCode: z.string().min(1), pin: z.string().min(4).max(8), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
-      const failureKey = loginKey(ctx.req.ip, `${input.companyCode}:${input.employeeCode}`);
+      const failureKey = loginKey(ctx.req.ip, `${input.employerId}:${input.employeeCode}`);
       if (isLoginBlocked(failureKey)) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many failed attempts. Try again in 15 minutes." });
-      const [employee] = await db.select({ employee: employees }).from(employees)
-        .innerJoin(employers, eq(employees.employerId, employers.id))
-        .where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true)))
-        .then((rows) => rows.map((row) => row.employee));
+      const [employee] = await db.select().from(employees)
+        .where(and(eq(employees.employerId, input.employerId), eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true)));
 
       if (!employee) {
         recordLoginFailure(failureKey);
@@ -116,11 +118,10 @@ export const authRouter = router({
 
   // --- Admin / supervisor (admin.html) ---
   adminLogin: publicProcedure
-    .input(z.object({ companyCode: z.string().min(1), username: z.string().min(1), password: z.string().min(8) }))
+    .input(z.object({ employerId: z.string().uuid(), username: z.string().min(1), password: z.string().min(8) }))
     .mutation(async ({ ctx, input }) => {
-      const [result] = await db.select({ profile: adminUsers, companyCode: employers.companyCode }).from(adminUsers)
-        .innerJoin(employers, eq(adminUsers.employerId, employers.id))
-        .where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(adminUsers.username, input.username.trim().toLowerCase())));
+      const [result] = await db.select({ profile: adminUsers }).from(adminUsers)
+        .where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.trim().toLowerCase())));
       if (!result?.profile.passwordHash || !(await verifyPassword(input.password, result.profile.passwordHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Company code, username, or password is incorrect." });
       const profile = result.profile;
 
