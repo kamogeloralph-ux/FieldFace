@@ -26,6 +26,10 @@ export const employers = pgTable("employers", {
   uifEmployeeRate: numeric("uif_employee_rate", { precision: 5, scale: 2 }).notNull().default("1.00"),
   uifEmployerRate: numeric("uif_employer_rate", { precision: 5, scale: 2 }).notNull().default("1.00"),
   timezone: text("timezone").notNull().default("Africa/Johannesburg"),
+  schedulePath: text("schedule_path"),
+  scheduleName: text("schedule_name"),
+  scheduleContentType: text("schedule_content_type"),
+  scheduleUpdatedAt: timestamp("schedule_updated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

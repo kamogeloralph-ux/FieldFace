@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -36,6 +36,7 @@ const BUCKETS = {
   selfies: process.env.R2_BUCKET_SELFIES || "fieldface-selfies",
   "site-photos": process.env.R2_BUCKET_SITE_PHOTOS || "fieldface-site-photos",
   payslips: process.env.R2_BUCKET_PAYSLIPS || "fieldface-payslips",
+  schedules: process.env.R2_BUCKET_SCHEDULES || "fieldface-schedules",
 } as const;
 
 /** Decode a `data:image/jpeg;base64,....` string into a Buffer + content type. */
@@ -65,6 +66,10 @@ async function putObject(bucket: keyof typeof BUCKETS, path: string, body: Buffe
   );
 }
 
+async function deleteObject(bucket: keyof typeof BUCKETS, path: string) {
+  await r2.send(new DeleteObjectCommand({ Bucket: BUCKETS[bucket], Key: path }));
+}
+
 export async function uploadSelfie(employeeId: string, dataUrl: string): Promise<string> {
   const { buffer, contentType } = decodeDataUrl(dataUrl);
   validateImage(buffer);
@@ -83,6 +88,31 @@ export async function uploadSitePhoto(siteId: string, dataUrl: string): Promise<
   return path;
 }
 
+export function decodeScheduleDataUrl(dataUrl: string): { buffer: Buffer; contentType: string } {
+  const match = /^data:(application\/pdf|image\/jpeg|image\/png);base64,(.*)$/.exec(dataUrl);
+  if (!match) throw new Error("Schedule must be a PDF, JPEG, or PNG file.");
+  const [, contentType, base64] = match;
+  const buffer = Buffer.from(base64, "base64");
+  if (buffer.length === 0 || buffer.length > 10 * 1024 * 1024) throw new Error("Schedule must be between 1 byte and 10 MB.");
+  const validPdf = contentType === "application/pdf" && buffer.subarray(0, 4).toString() === "%PDF";
+  const validJpeg = contentType === "image/jpeg" && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const validPng = contentType === "image/png" && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  if (!validPdf && !validJpeg && !validPng) throw new Error("Schedule file content does not match its declared format.");
+  return { buffer, contentType };
+}
+
+export async function uploadSchedule(employerId: string, dataUrl: string, originalName: string): Promise<{ path: string; contentType: string }> {
+  const { buffer, contentType } = decodeScheduleDataUrl(dataUrl);
+  const safeName = originalName.replace(/[^a-z0-9._-]+/gi, "-").slice(-80) || "schedule";
+  const path = `${employerId}/${Date.now()}-${safeName}`;
+  await putObject("schedules", path, buffer, contentType);
+  return { path, contentType };
+}
+
+export async function removeSchedule(path: string) {
+  await deleteObject("schedules", path);
+}
+
 export async function uploadPayslipPdf(
   employeeId: string,
   year: number,
@@ -95,7 +125,7 @@ export async function uploadPayslipPdf(
 }
 
 export async function signedUrl(
-  bucket: "selfies" | "site-photos" | "payslips",
+  bucket: "selfies" | "site-photos" | "payslips" | "schedules",
   path: string,
   expiresInSeconds = 3600,
 ): Promise<string> {

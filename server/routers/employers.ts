@@ -2,12 +2,44 @@ import { z } from "zod";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import { companyDeductionEmployees, companyDeductions, employees, employers } from "../../drizzle/schema";
-import { adminProcedure, ownerProcedure, platformProcedure, router } from "../trpc";
+import { adminProcedure, employeeProcedure, ownerProcedure, platformProcedure, router } from "../trpc";
+import { removeSchedule, signedUrl, uploadSchedule } from "../storage";
 
 export const employersRouter = router({
   getMine: adminProcedure.query(async ({ ctx }) => {
     const [employer] = await db.select().from(employers).where(eq(employers.id, ctx.admin.employerId));
     return employer ?? null;
+  }),
+
+  getSchedule: employeeProcedure.query(async ({ ctx }) => {
+    const [employer] = await db.select({ schedulePath: employers.schedulePath, scheduleName: employers.scheduleName, scheduleContentType: employers.scheduleContentType, scheduleUpdatedAt: employers.scheduleUpdatedAt }).from(employers).where(eq(employers.id, ctx.employee.employerId));
+    if (!employer?.schedulePath) return null;
+    return { name: employer.scheduleName ?? "Company schedule", contentType: employer.scheduleContentType, updatedAt: employer.scheduleUpdatedAt, url: await signedUrl("schedules", employer.schedulePath, 900) };
+  }),
+
+  getScheduleAdmin: adminProcedure.query(async ({ ctx }) => {
+    const [employer] = await db.select({ schedulePath: employers.schedulePath, scheduleName: employers.scheduleName, scheduleContentType: employers.scheduleContentType, scheduleUpdatedAt: employers.scheduleUpdatedAt }).from(employers).where(eq(employers.id, ctx.admin.employerId));
+    if (!employer?.schedulePath) return null;
+    return { name: employer.scheduleName ?? "Company schedule", contentType: employer.scheduleContentType, updatedAt: employer.scheduleUpdatedAt, url: await signedUrl("schedules", employer.schedulePath, 900) };
+  }),
+
+  uploadSchedule: adminProcedure
+    .input(z.object({ dataUrl: z.string().min(1), fileName: z.string().min(1).max(200) }))
+    .mutation(async ({ ctx, input }) => {
+      const [employer] = await db.select({ schedulePath: employers.schedulePath }).from(employers).where(eq(employers.id, ctx.admin.employerId));
+      if (!employer) throw new Error("Company not found.");
+      const uploaded = await uploadSchedule(ctx.admin.employerId, input.dataUrl, input.fileName);
+      await db.update(employers).set({ schedulePath: uploaded.path, scheduleName: input.fileName, scheduleContentType: uploaded.contentType, scheduleUpdatedAt: new Date() }).where(eq(employers.id, ctx.admin.employerId));
+      if (employer.schedulePath) await removeSchedule(employer.schedulePath).catch(() => undefined);
+      return { success: true as const };
+    }),
+
+  removeSchedule: adminProcedure.mutation(async ({ ctx }) => {
+    const [employer] = await db.select({ schedulePath: employers.schedulePath }).from(employers).where(eq(employers.id, ctx.admin.employerId));
+    if (!employer) throw new Error("Company not found.");
+    await db.update(employers).set({ schedulePath: null, scheduleName: null, scheduleContentType: null, scheduleUpdatedAt: null }).where(eq(employers.id, ctx.admin.employerId));
+    if (employer.schedulePath) await removeSchedule(employer.schedulePath).catch(() => undefined);
+    return { success: true as const };
   }),
 
   listDeductions: adminProcedure.query(async ({ ctx }) => {

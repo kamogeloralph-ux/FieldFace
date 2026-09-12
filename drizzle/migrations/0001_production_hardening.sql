@@ -2,6 +2,10 @@
 -- Apply after the existing schema and verify on a staging database first.
 
 alter table public.employers add column if not exists timezone text not null default 'Africa/Johannesburg';
+alter table public.employers add column if not exists schedule_path text;
+alter table public.employers add column if not exists schedule_name text;
+alter table public.employers add column if not exists schedule_content_type text;
+alter table public.employers add column if not exists schedule_updated_at timestamptz;
 alter table public.time_entries add column if not exists clock_action_id uuid;
 alter table public.time_entries add column if not exists captured_at timestamptz;
 alter table public.time_entries add column if not exists synced_at timestamptz not null default now();

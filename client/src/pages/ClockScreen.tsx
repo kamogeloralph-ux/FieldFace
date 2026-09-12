@@ -13,6 +13,7 @@ export default function ClockScreen() {
     enabled: !!me.data,
     placeholderData: () => getCachedEmployeeStatus(),
   });
+  const schedule = trpc.employers.getSchedule.useQuery(undefined, { enabled: !!me.data });
   const utils = trpc.useUtils();
   const clock = trpc.timeEntries.clock.useMutation();
   const logout = trpc.auth.employeeLogout.useMutation();
@@ -190,6 +191,7 @@ export default function ClockScreen() {
               {detailsOpen && !status.data.site.referencePhotoUrl && <p className="px-4 pb-3 text-sm text-slate-500">Stand at the designated site before taking your selfie.</p>}
             </div>
           )}
+          {schedule.data && <div className="card flex items-center justify-between gap-3"><div><p className="text-xs text-slate-500">Company schedule</p><p className="font-semibold text-slate-800 truncate">{schedule.data.name}</p></div><a href={schedule.data.url} target="_blank" rel="noreferrer" className="btn-secondary w-auto px-3 py-2 text-sm">View</a></div>}
         </div>
       )}
 
