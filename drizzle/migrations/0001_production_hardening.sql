@@ -6,6 +6,8 @@ alter table public.employers add column if not exists schedule_path text;
 alter table public.employers add column if not exists schedule_name text;
 alter table public.employers add column if not exists schedule_content_type text;
 alter table public.employers add column if not exists schedule_updated_at timestamptz;
+alter table public.employers add column if not exists support_whatsapp text;
+alter table public.employers add column if not exists support_email text;
 create table if not exists public.leave_requests (
   id uuid primary key default gen_random_uuid(),
   employer_id uuid not null references public.employers(id) on delete cascade,

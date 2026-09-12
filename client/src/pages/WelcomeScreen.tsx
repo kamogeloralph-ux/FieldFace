@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { trpc } from "../lib/trpc";
 
 const FEATURES = [
   {
@@ -44,6 +45,9 @@ const FEATURES = [
 ];
 
 export default function WelcomeScreen() {
+  const support = trpc.employers.getPublicSupport.useQuery();
+  const whatsappNumber = support.data?.supportWhatsapp?.replace(/[^\d]/g, "");
+
   return (
     <div className="app-wallpaper min-h-screen px-6 py-10">
       <div className="max-w-sm mx-auto">
@@ -56,35 +60,26 @@ export default function WelcomeScreen() {
         <div className="text-center mb-6 welcome-hero">
           <p className="eyebrow mb-3">FIELD OPERATIONS, SIMPLIFIED</p>
           <h1 className="text-3xl font-bold text-slate-900">Built for the field.</h1>
-          <p className="text-slate-600 mt-2">
-            Clock in with a selfie at the site, and let the hours, reports and payslips take care of themselves.
-          </p>
+          <p className="text-slate-600 mt-2">Clock in with a selfie at the site, and let the hours, reports and payslips take care of themselves.</p>
         </div>
 
-        <div className="space-y-3 mb-10">
-          <Link to="/clock-in" className="block rounded-2xl bg-emerald-900 text-white px-5 py-4 active:scale-[0.98] transition">
-            <p className="font-semibold">I'm clocking in</p>
-            <p className="text-emerald-200 text-sm">Crew · code + PIN</p>
-          </Link>
-          <Link to="/company/login" className="block rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 active:scale-[0.98] transition">
-            <p className="font-semibold text-slate-800">Management Sign in</p>
-            <p className="text-slate-500 text-sm">Sites · crew · payslips</p>
-          </Link>
+        <div className="space-y-3 mb-8">
+          <Link to="/clock-in" className="block rounded-2xl bg-emerald-900 text-white px-5 py-4 active:scale-[0.98] transition"><p className="font-semibold">I'm clocking in</p><p className="text-emerald-200 text-sm">Crew · code + PIN</p></Link>
+          <Link to="/company/login" className="block rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 active:scale-[0.98] transition"><p className="font-semibold text-slate-800">Management Sign in</p><p className="text-slate-500 text-sm">Sites · crew · payslips</p></Link>
         </div>
+
+        <section className="card mb-10" aria-labelledby="support-heading">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Need help?</p>
+          <h2 id="support-heading" className="font-semibold text-slate-800 mt-1">Client support</h2>
+          <p className="text-xs text-slate-500 mt-1">Contact {support.data?.name ?? "your support team"} directly.</p>
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            {whatsappNumber ? <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-700 text-white text-center font-semibold text-sm py-3">WhatsApp</a> : <span className="rounded-xl bg-slate-100 text-slate-400 text-center font-semibold text-sm py-3">WhatsApp unavailable</span>}
+            {support.data?.supportEmail ? <a href={`mailto:${support.data.supportEmail}`} className="rounded-xl border border-slate-300 text-slate-700 text-center font-semibold text-sm py-3">Email support</a> : <span className="rounded-xl bg-slate-100 text-slate-400 text-center font-semibold text-sm py-3">Email unavailable</span>}
+          </div>
+        </section>
 
         <p className="text-center text-xs font-semibold tracking-wide text-slate-400 mb-4">HOW A SHIFT IS RECORDED</p>
-
-        <div className="grid grid-cols-2 gap-3">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="card">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3">
-                {f.icon}
-              </div>
-              <p className="font-semibold text-slate-800 text-sm mb-1">{f.title}</p>
-              <p className="text-xs text-slate-500 leading-snug">{f.body}</p>
-            </div>
-          ))}
-        </div>
+        <div className="grid grid-cols-2 gap-3">{FEATURES.map((f) => <div key={f.title} className="card"><div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3">{f.icon}</div><p className="font-semibold text-slate-800 text-sm mb-1">{f.title}</p><p className="text-xs text-slate-500 leading-snug">{f.body}</p></div>)}</div>
         <p className="text-center text-xs text-slate-500 mt-6"><Link to="/policy" className="underline">Read the FieldFace client policy</Link></p>
       </div>
     </div>

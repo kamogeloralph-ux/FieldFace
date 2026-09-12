@@ -8,6 +8,8 @@ type Form = {
   address: string;
   contactPhone: string;
   contactEmail: string;
+  supportWhatsapp: string;
+  supportEmail: string;
   timezone: string;
   uifEnabled: boolean;
   uifEmployeeRate: string;
@@ -15,7 +17,7 @@ type Form = {
 };
 
 const emptyForm: Form = {
-  name: "", taxNumber: "", companyRegNumber: "", address: "", contactPhone: "", contactEmail: "",
+  name: "", taxNumber: "", companyRegNumber: "", address: "", contactPhone: "", contactEmail: "", supportWhatsapp: "", supportEmail: "",
   timezone: "Africa/Johannesburg", uifEnabled: false, uifEmployeeRate: "1.00", uifEmployerRate: "1.00",
 };
 
@@ -28,6 +30,9 @@ export default function EmployerSettingsPage() {
       await utils.employers.getMine.invalidate();
       setSaved(true);
     },
+  });
+  const updateSupport = trpc.employers.updateSupport.useMutation({
+    onSuccess: async () => { await utils.employers.getMine.invalidate(); setSaved(true); },
   });
   const deductions = trpc.employers.listDeductions.useQuery(undefined, { enabled: me.data?.isPlatformAdmin === true });
   const companyEmployees = trpc.employees.list.useQuery(undefined, { enabled: me.data?.isPlatformAdmin === true });
@@ -50,6 +55,8 @@ export default function EmployerSettingsPage() {
       address: employer.data.address ?? "",
       contactPhone: employer.data.contactPhone ?? "",
       contactEmail: employer.data.contactEmail ?? "",
+      supportWhatsapp: employer.data.supportWhatsapp ?? "",
+      supportEmail: employer.data.supportEmail ?? "",
       timezone: employer.data.timezone ?? "Africa/Johannesburg",
       uifEnabled: employer.data.uifEnabled,
       uifEmployeeRate: employer.data.uifEmployeeRate ?? "1.00",
@@ -83,6 +90,10 @@ export default function EmployerSettingsPage() {
     });
   }
 
+  function saveSupport() {
+    updateSupport.mutate({ supportWhatsapp: form.supportWhatsapp, supportEmail: form.supportEmail });
+  }
+
   function addDeduction() {
     const amount = Number(deductionAmount);
     if (!deductionName.trim() || !Number.isFinite(amount) || amount < 0) return;
@@ -99,7 +110,7 @@ export default function EmployerSettingsPage() {
       ["Contact phone", employer.data.contactPhone], ["Contact email", employer.data.contactEmail],
       ["Timezone", employer.data.timezone],
     ];
-    return <div><h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1><div className="card max-w-lg space-y-4"><p className="text-sm text-slate-600">Company details are managed by the FieldFace administrator. Contact admin if anything needs to change.</p><div className="divide-y divide-slate-100">{fields.map(([label, value]) => <div key={label} className="py-3 first:pt-0 last:pb-0"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="text-slate-800 mt-1">{value || "Not provided"}</p></div>)}</div><p className="text-xs text-slate-500">UIF settings are also controlled by the administrator.</p></div></div>;
+    return <div><h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1><div className="card max-w-lg space-y-4"><p className="text-sm text-slate-600">Company details are managed by the FieldFace administrator. Contact admin if anything needs to change.</p><div className="divide-y divide-slate-100">{fields.map(([label, value]) => <div key={label} className="py-3 first:pt-0 last:pb-0"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="text-slate-800 mt-1">{value || "Not provided"}</p></div>)}</div><p className="text-xs text-slate-500">UIF settings are also controlled by the administrator.</p></div><div className="card max-w-lg mt-4 space-y-3"><div><p className="font-semibold text-slate-800">Client support</p><p className="text-xs text-slate-500 mt-1">These contacts appear on the public welcome screen.</p></div><label className="text-xs text-slate-500">WhatsApp number<input className="input-field mt-1" value={form.supportWhatsapp} onChange={(e) => setField("supportWhatsapp", e.target.value)} placeholder="e.g. +27 71 234 5678" /></label><label className="text-xs text-slate-500">Support email<input className="input-field mt-1" type="email" value={form.supportEmail} onChange={(e) => setField("supportEmail", e.target.value)} placeholder="support@yourcompany.com" /></label><button className="btn-primary" onClick={saveSupport} disabled={updateSupport.isPending}>{updateSupport.isPending ? "Saving..." : "Save support contacts"}</button>{updateSupport.error && <p className="text-sm text-red-600">{updateSupport.error.message}</p>}{saved && <p className="text-sm text-emerald-700">Saved.</p>}</div></div>;
   }
 
   return (
@@ -107,6 +118,7 @@ export default function EmployerSettingsPage() {
       <h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1>
       <div className="card max-w-2xl space-y-4">
         <p className="text-sm text-emerald-700">Platform administrator mode: you can edit this company.</p>
+        <div className="rounded-xl bg-emerald-50 p-3 space-y-3"><div><p className="font-semibold text-emerald-900">Client support</p><p className="text-xs text-emerald-700 mt-1">These contacts appear on the public welcome screen.</p></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><label className="text-xs text-slate-500">WhatsApp number<input className="input-field mt-1" value={form.supportWhatsapp} onChange={(e) => setField("supportWhatsapp", e.target.value)} placeholder="e.g. +27 71 234 5678" /></label><label className="text-xs text-slate-500">Support email<input className="input-field mt-1" type="email" value={form.supportEmail} onChange={(e) => setField("supportEmail", e.target.value)} placeholder="support@yourcompany.com" /></label></div><button type="button" className="btn-secondary sm:w-auto px-4 py-2" onClick={saveSupport} disabled={updateSupport.isPending}>{updateSupport.isPending ? "Saving..." : "Save support contacts"}</button></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="text-xs text-slate-500">Company name<input className="input-field mt-1" value={form.name} onChange={(e) => setField("name", e.target.value)} /></label>
           <label className="text-xs text-slate-500">Tax number<input className="input-field mt-1" value={form.taxNumber} onChange={(e) => setField("taxNumber", e.target.value)} /></label>
