@@ -64,7 +64,11 @@ export default function CompaniesPage() {
   async function handleManage(employerId: string) {
     setBusyId(employerId);
     try {
-      await impersonate.mutateAsync({ employerId });
+      await Promise.race([
+        impersonate.mutateAsync({ employerId }),
+        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Opening the company dashboard timed out. Please try again.")), 15000)),
+      ]);
+      setBusyId(null);
       window.location.assign("/company/employer");
     } catch (error) {
       setBusyId(null);

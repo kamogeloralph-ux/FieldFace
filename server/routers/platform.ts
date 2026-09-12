@@ -169,6 +169,7 @@ export const platformRouter = router({
         adminUserId: ctx.platform.platformAdminId,
         employerId: input.employerId,
         role: "owner",
+        isPlatformAdmin: true,
       });
 
       return { success: true } as const;

@@ -149,8 +149,8 @@ export const authRouter = router({
   adminMe: publicProcedure.query(async ({ ctx }) => {
     if (!ctx.admin) return null;
     const [profile] = await db.select().from(adminUsers).where(eq(adminUsers.id, ctx.admin.adminUserId));
-    if (!profile && ctx.platform?.platformAdminId === ctx.admin.adminUserId) {
-      const [platformProfile] = await db.select().from(platformAdmins).where(eq(platformAdmins.id, ctx.platform.platformAdminId));
+    if (!profile && (ctx.admin.isPlatformAdmin || ctx.platform?.platformAdminId === ctx.admin.adminUserId)) {
+      const [platformProfile] = await db.select().from(platformAdmins).where(eq(platformAdmins.id, ctx.admin.adminUserId));
       const [employer] = await db.select().from(employers).where(eq(employers.id, ctx.admin.employerId));
       if (!platformProfile || !employer) return null;
       return {

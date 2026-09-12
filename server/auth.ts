@@ -20,6 +20,7 @@ export interface AdminSession {
   adminUserId: string;
   employerId: string;
   role: "owner" | "supervisor";
+  isPlatformAdmin?: boolean;
 }
 
 export interface PlatformSession {
