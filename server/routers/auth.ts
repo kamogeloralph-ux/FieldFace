@@ -16,17 +16,17 @@ import { TRPCError } from "@trpc/server";
 export const authRouter = router({
   // --- Employee (mobile clocking app) ---
   employeeLogin: publicProcedure
-    .input(z.object({ taxNumber: z.string().min(1), pin: z.string().min(4).max(8) }))
+    .input(z.object({ employeeCode: z.string().min(1), pin: z.string().min(4).max(8) }))
     .mutation(async ({ ctx, input }) => {
       const [employee] = await db
         .select()
         .from(employees)
-        .where(and(eq(employees.taxNumber, input.taxNumber.trim()), eq(employees.active, true)));
+        .where(and(eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true)));
 
-      if (!employee) throw new TRPCError({ code: "UNAUTHORIZED", message: "Tax number or PIN is incorrect." });
+      if (!employee) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
 
       const pinOk = await verifyPin(input.pin, employee.pinHash);
-      if (!pinOk) throw new TRPCError({ code: "UNAUTHORIZED", message: "Tax number or PIN is incorrect." });
+      if (!pinOk) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
 
       issueEmployeeSession(ctx.res, {
         employeeId: employee.id,
@@ -37,7 +37,7 @@ export const authRouter = router({
       return {
         id: employee.id,
         fullName: employee.fullName,
-        taxNumber: employee.taxNumber,
+        employeeCode: employee.employeeCode,
         siteId: employee.siteId,
       };
     }),
@@ -54,7 +54,7 @@ export const authRouter = router({
     return {
       id: employee.id,
       fullName: employee.fullName,
-      taxNumber: employee.taxNumber,
+      employeeCode: employee.employeeCode,
       siteId: employee.siteId,
     };
   }),

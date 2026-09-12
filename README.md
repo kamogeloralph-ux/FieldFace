@@ -3,7 +3,7 @@
 A GPS + selfie-verified clock-in/out system for field and public works employees,
 built for employers who don't have a clocking system yet.
 
-- **Employee app** (`/`) — enter employee code + PIN, then clock in/out by taking a
+- **Employee app** (`/`) — enter employee number + PIN, then clock in/out by taking a
   selfie at the supervisor-designated area. Both GPS location and the photo are
   captured and checked against a geofence around the site.
 - **Company admin app** (`/company/login`) — manage employer details, worksites (with GPS
@@ -85,10 +85,9 @@ code + PIN.
 
 ## Notes / things to adapt before going to production
 
-- **Employee identity**: employees log in with a code + PIN (no email needed — common
-  for public works crews). PINs are bcrypt-hashed; the admin can reset one from the
-  Employees page. If your workforce does have email/phone, consider adding OTP login
-  instead.
+- **Employee identity**: employees log in with an employee number + PIN (no email needed — common
+  for public works crews). Tax numbers are stored in employee details for payroll and payslips,
+  not used for clock-in. PINs are bcrypt-hashed; the admin can reset one from the Employees page.
 - **Geofence is a flag, not a hard block**: an out-of-range clock-in still succeeds
   (GPS is often noisy on site) but is clearly flagged on the Daily Report so a
   supervisor can follow up, rather than locking a legitimate worker out.

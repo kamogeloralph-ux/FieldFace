@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
 
 export default function EmployeeLogin() {
-  const [taxNumber, setTaxNumber] = useState("");
+  const [employeeCode, setEmployeeCode] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export default function EmployeeLogin() {
         <div className="flex justify-center mb-6"><div className="brand-lockup"><img src="/fieldface-logo.png" alt="FieldFace" className="h-8 w-auto" /></div></div>
         <p className="eyebrow mb-3">FIELD OPERATIONS, SIMPLIFIED</p>
         <h1 className="text-2xl font-bold text-emerald-900">Employee clock-in</h1>
-        <p className="text-slate-600 mt-1">Enter your tax number and PIN to clock in or out. Your shift can be saved when offline.</p>
+        <p className="text-slate-600 mt-1">Enter your employee number and PIN to clock in or out. Your shift can be saved when offline.</p>
       </div>
 
       <form
@@ -32,15 +32,15 @@ export default function EmployeeLogin() {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          login.mutate({ taxNumber: taxNumber.trim(), pin });
+          login.mutate({ employeeCode: employeeCode.trim(), pin });
         }}
       >
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Tax number</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Employee number</label>
           <input
             className="input-field"
-            value={taxNumber}
-            onChange={(e) => setTaxNumber(e.target.value)}
+            value={employeeCode}
+            onChange={(e) => setEmployeeCode(e.target.value)}
             autoFocus
             required
           />
