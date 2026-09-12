@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
-import { employees, employers, payslips, shifts } from "../drizzle/schema";
-import { computePayroll, computeUifDeduction } from "./payroll";
+import { companyDeductions, employees, employers, payslips, shifts } from "../drizzle/schema";
+import { computeCompanyDeductions, computePayroll, computeUifDeduction } from "./payroll";
 import { generatePayslipPdf } from "./pdf/payslip";
 import { uploadPayslipPdf } from "./storage";
 
@@ -22,7 +22,10 @@ export async function generatePayslipForEmployee(
 
   const totals = computePayroll(periodShifts, employee.hourlyRateWeekday, employee.hourlyRateWeekend);
   const uifDeduction = computeUifDeduction(totals.grossPay, employer.uifEnabled, employer.uifEmployeeRate);
-  const netPay = Math.round((totals.grossPay - uifDeduction) * 100) / 100;
+  const configuredDeductions = await db.select().from(companyDeductions).where(and(eq(companyDeductions.employerId, employerId), eq(companyDeductions.active, true)));
+  const deductionDetails = computeCompanyDeductions(totals.grossPay, uifDeduction, configuredDeductions);
+  const customDeductions = deductionDetails.reduce((sum, deduction) => sum + deduction.amount, 0);
+  const netPay = Math.round((totals.grossPay - uifDeduction - customDeductions) * 100) / 100;
 
   const pdfBuffer = await generatePayslipPdf({
     employerName: employer.name,
@@ -44,6 +47,7 @@ export async function generatePayslipForEmployee(
     hourlyRateWeekend: Number(employee.hourlyRateWeekend),
     grossPay: totals.grossPay,
     uifDeduction,
+    companyDeductions: deductionDetails,
     netPay,
   });
 
@@ -63,6 +67,7 @@ export async function generatePayslipForEmployee(
       hourlyRateWeekend: employee.hourlyRateWeekend,
       grossPay: totals.grossPay.toString(),
       uifDeduction: uifDeduction.toString(),
+      deductionDetails,
       netPay: netPay.toString(),
       pdfPath,
     })
@@ -74,6 +79,7 @@ export async function generatePayslipForEmployee(
         totalHours: totals.totalHours.toString(),
         grossPay: totals.grossPay.toString(),
         uifDeduction: uifDeduction.toString(),
+        deductionDetails,
         netPay: netPay.toString(),
         pdfPath,
         generatedAt: new Date(),

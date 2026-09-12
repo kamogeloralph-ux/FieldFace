@@ -35,6 +35,8 @@ export async function ensureProductionSchema() {
     `alter table public.payslips add column if not exists status text not null default 'draft'`,
     `alter table public.payslips add column if not exists finalized_at timestamptz`,
     `alter table public.payslips add column if not exists finalized_by uuid`,
+    `create table if not exists public.company_deductions (id uuid primary key default gen_random_uuid(), employer_id uuid not null references public.employers(id) on delete cascade, name text not null, type text not null, amount numeric(10,2) not null default 0, active boolean not null default true, created_at timestamptz not null default now())`,
+    `alter table public.payslips add column if not exists deduction_details jsonb not null default '[]'::jsonb`,
     `create table if not exists public.platform_admins (id uuid primary key references auth.users(id) on delete cascade, full_name text not null, email text not null, created_at timestamptz not null default now())`,
     `create table if not exists public.audit_logs (id uuid primary key default gen_random_uuid(), actor_type text not null, actor_id uuid, employer_id uuid references public.employers(id) on delete set null, action text not null, entity_type text not null, entity_id uuid, metadata text, created_at timestamptz not null default now())`,
   ];

@@ -25,6 +25,7 @@ export interface PayslipPdfInput {
   hourlyRateWeekend: number;
   grossPay: number;
   uifDeduction: number;
+  companyDeductions: { name: string; amount: number }[];
   netPay: number;
   currency?: string;
 }
@@ -122,6 +123,13 @@ export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
     doc.text("UIF", col1, rowY);
     doc.text(input.uifDeduction > 0 ? `-${money(input.uifDeduction)}` : money(0), col4, rowY);
     doc.moveDown(1);
+
+    for (const deduction of input.companyDeductions) {
+      rowY = doc.y;
+      doc.text(deduction.name, col1, rowY);
+      doc.text(deduction.amount > 0 ? `-${money(deduction.amount)}` : money(0), col4, rowY);
+      doc.moveDown(1);
+    }
 
     doc.moveTo(col1, doc.y).lineTo(545, doc.y).strokeColor("#000").stroke();
     doc.moveDown(0.5);

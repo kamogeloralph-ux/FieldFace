@@ -29,8 +29,14 @@ export default function EmployerSettingsPage() {
       setSaved(true);
     },
   });
+  const deductions = trpc.employers.listDeductions.useQuery(undefined, { enabled: me.data?.isPlatformAdmin === true });
+  const createDeduction = trpc.employers.createDeduction.useMutation({ onSuccess: () => deductions.refetch() });
+  const deleteDeduction = trpc.employers.deleteDeduction.useMutation({ onSuccess: () => deductions.refetch() });
   const [form, setForm] = useState<Form>(emptyForm);
   const [saved, setSaved] = useState(false);
+  const [deductionName, setDeductionName] = useState("");
+  const [deductionType, setDeductionType] = useState<"fixed" | "percentage">("fixed");
+  const [deductionAmount, setDeductionAmount] = useState("");
 
   useEffect(() => {
     if (!employer.data) return;
@@ -74,6 +80,14 @@ export default function EmployerSettingsPage() {
     });
   }
 
+  function addDeduction() {
+    const amount = Number(deductionAmount);
+    if (!deductionName.trim() || !Number.isFinite(amount) || amount < 0) return;
+    createDeduction.mutate({ name: deductionName.trim(), type: deductionType, amount });
+    setDeductionName("");
+    setDeductionAmount("");
+  }
+
   if (!canEdit) {
     const fields = [
       ["Company name", employer.data.name], ["Tax number", employer.data.taxNumber],
@@ -99,6 +113,7 @@ export default function EmployerSettingsPage() {
         <label className="text-xs text-slate-500">Address<textarea className="input-field mt-1" value={form.address} onChange={(e) => setField("address", e.target.value)} /></label>
         <label className="text-xs text-slate-500">Timezone<input className="input-field mt-1" value={form.timezone} onChange={(e) => setField("timezone", e.target.value)} placeholder="Africa/Johannesburg" /></label>
         <div className="border-t border-slate-100 pt-4 space-y-3"><p className="font-semibold text-slate-800">UIF settings</p><label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={form.uifEnabled} onChange={(e) => setField("uifEnabled", e.target.checked)} /> Enable UIF deduction</label>{form.uifEnabled && <div className="grid grid-cols-2 gap-3"><label className="text-xs text-slate-500">Employee rate %<input className="input-field mt-1" type="number" min="0" max="100" step="0.01" value={form.uifEmployeeRate} onChange={(e) => setField("uifEmployeeRate", e.target.value)} /></label><label className="text-xs text-slate-500">Employer rate %<input className="input-field mt-1" type="number" min="0" max="100" step="0.01" value={form.uifEmployerRate} onChange={(e) => setField("uifEmployerRate", e.target.value)} /></label></div>}</div>
+        <div className="border-t border-slate-100 pt-4 space-y-3"><p className="font-semibold text-slate-800">Company deductions</p><p className="text-xs text-slate-500">Recurring deductions are applied when payslips are generated. Fixed amounts are in rand; percentage deductions use gross pay.</p><div className="grid grid-cols-1 sm:grid-cols-3 gap-2"><input className="input-field" placeholder="Type, e.g. Uniform" value={deductionName} onChange={(e) => setDeductionName(e.target.value)} /><select className="input-field" value={deductionType} onChange={(e) => setDeductionType(e.target.value as "fixed" | "percentage")}><option value="fixed">Fixed amount</option><option value="percentage">Percentage of gross</option></select><div className="flex gap-2"><input className="input-field" type="number" min="0" step="0.01" placeholder="Amount" value={deductionAmount} onChange={(e) => setDeductionAmount(e.target.value)} /><button type="button" className="btn-secondary w-auto px-3" onClick={addDeduction} disabled={createDeduction.isPending}>Add</button></div></div><div className="space-y-2">{deductions.data?.map((deduction) => <div key={deduction.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2"><div><p className="text-sm font-medium text-slate-800">{deduction.name}</p><p className="text-xs text-slate-500">{deduction.type === "percentage" ? `${deduction.amount}% of gross pay` : `R${deduction.amount}`} · {deduction.active ? "Active" : "Inactive"}</p></div><button type="button" className="text-xs text-red-600 underline" onClick={() => deleteDeduction.mutate({ id: deduction.id })}>Remove</button></div>)}{deductions.data?.length === 0 && <p className="text-xs text-slate-400">No company deductions configured.</p>}</div></div>
         <div className="flex items-center gap-3"><button className="btn-primary" onClick={save} disabled={update.isPending}>{update.isPending ? "Saving..." : "Save company settings"}</button>{saved && <span className="text-sm text-emerald-700">Saved.</span>}</div>
         {update.error && <p className="text-sm text-red-600">{update.error.message}</p>}
       </div>

@@ -79,7 +79,7 @@ export default function PayslipsPage() {
             <div>
               <p className="font-medium text-slate-800">{p.employeeName}</p>
               <p className="text-xs text-slate-500">
-                {Number(p.totalHours).toFixed(2)}h total ({Number(p.weekdayHours).toFixed(2)} weekday / {Number(p.weekendHours).toFixed(2)} weekend) · R{Number(p.grossPay).toFixed(2)}
+                {Number(p.totalHours).toFixed(2)}h total ({Number(p.weekdayHours).toFixed(2)} weekday / {Number(p.weekendHours).toFixed(2)} weekend) · Gross R{Number(p.grossPay).toFixed(2)} · Deductions R{((Number(p.uifDeduction) || 0) + (p.deductionDetails ?? []).reduce((sum, deduction) => sum + Number(deduction.amount), 0)).toFixed(2)} · Net R{Number(p.netPay).toFixed(2)}
               </p>
             </div>
             <button className="btn-secondary download-button" onClick={() => share(p.id, p.employeeName)}>

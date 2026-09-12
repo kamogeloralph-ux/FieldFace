@@ -51,3 +51,32 @@ export function computeUifDeduction(grossPay: number, uifEnabled: boolean, uifEm
   const rate = Number(uifEmployeeRate) / 100;
   return Math.round(grossPay * rate * 100) / 100;
 }
+
+export interface CompanyDeductionInput {
+  name: string;
+  type: "fixed" | "percentage";
+  amount: string | number;
+}
+
+export interface CompanyDeductionResult {
+  name: string;
+  type: "fixed" | "percentage";
+  rate: number;
+  amount: number;
+}
+
+/** Applies active company deductions in configured order without allowing net pay below zero. */
+export function computeCompanyDeductions(
+  grossPay: number,
+  uifDeduction: number,
+  deductions: CompanyDeductionInput[],
+): CompanyDeductionResult[] {
+  let remaining = Math.max(0, grossPay - uifDeduction);
+  return deductions.map((deduction) => {
+    const rate = Number(deduction.amount);
+    const requested = deduction.type === "percentage" ? grossPay * rate / 100 : rate;
+    const amount = Math.round(Math.min(Math.max(0, requested), remaining) * 100) / 100;
+    remaining = Math.max(0, remaining - amount);
+    return { name: deduction.name, type: deduction.type, rate, amount };
+  });
+}

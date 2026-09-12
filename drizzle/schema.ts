@@ -4,6 +4,7 @@ import {
   date,
   doublePrecision,
   integer,
+  jsonb,
   numeric,
   pgTable,
   text,
@@ -24,6 +25,16 @@ export const employers = pgTable("employers", {
   uifEmployeeRate: numeric("uif_employee_rate", { precision: 5, scale: 2 }).notNull().default("1.00"),
   uifEmployerRate: numeric("uif_employer_rate", { precision: 5, scale: 2 }).notNull().default("1.00"),
   timezone: text("timezone").notNull().default("Africa/Johannesburg"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const companyDeductions = pgTable("company_deductions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  type: text("type", { enum: ["fixed", "percentage"] }).notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -130,6 +141,7 @@ export const payslips = pgTable("payslips", {
   hourlyRateWeekend: numeric("hourly_rate_weekend", { precision: 10, scale: 2 }).notNull(),
   grossPay: numeric("gross_pay", { precision: 10, scale: 2 }).notNull(),
   uifDeduction: numeric("uif_deduction", { precision: 10, scale: 2 }).notNull().default("0"),
+  deductionDetails: jsonb("deduction_details").$type<{ name: string; type: "fixed" | "percentage"; rate: number; amount: number }[]>().notNull().default([]),
   netPay: numeric("net_pay", { precision: 10, scale: 2 }).notNull(),
   pdfPath: text("pdf_path").notNull(),
   generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),

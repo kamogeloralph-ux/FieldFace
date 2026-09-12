@@ -228,3 +228,15 @@ create table if not exists public.audit_logs (
 create unique index if not exists employees_employer_code_unique on public.employees(employer_id, employee_code);
 create unique index if not exists time_entries_employee_action_unique on public.time_entries(employee_id, clock_action_id) where clock_action_id is not null;
 create index if not exists audit_logs_employer_created_idx on public.audit_logs(employer_id, created_at desc);
+
+create table if not exists public.company_deductions (
+  id uuid primary key default gen_random_uuid(),
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  name text not null,
+  type text not null check (type in ('fixed', 'percentage')),
+  amount numeric(10,2) not null check (amount >= 0),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists company_deductions_employer_idx on public.company_deductions(employer_id, active);
+alter table public.payslips add column if not exists deduction_details jsonb not null default '[]'::jsonb;
