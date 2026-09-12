@@ -62,7 +62,7 @@ export const platformAdmins = pgTable("platform_admins", {
 
 // Admin/supervisor accounts. Tied 1:1 to a Supabase Auth user id.
 export const adminUsers = pgTable("admin_users", {
-  id: uuid("id").primaryKey(), // matches supabase auth.users.id
+  id: uuid("id").primaryKey(), // FieldFace-managed manager identity
   employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),

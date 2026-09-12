@@ -60,6 +60,7 @@ export async function ensureProductionSchema() {
     `create table if not exists public.platform_admins (id uuid primary key references auth.users(id) on delete cascade, full_name text not null, email text not null, created_at timestamptz not null default now())`,
     `alter table public.admin_users add column if not exists username text`,
     `alter table public.admin_users add column if not exists password_hash text`,
+    `alter table public.admin_users drop constraint if exists admin_users_id_fkey`,
     `alter table public.admin_users add column if not exists activation_code_hash text`,
     `alter table public.admin_users add column if not exists activation_expires_at timestamptz`,
     `alter table public.platform_admins add column if not exists support_whatsapp text`,
