@@ -23,6 +23,7 @@ export const employersRouter = router({
         uifEnabled: z.boolean().optional(),
         uifEmployeeRate: z.number().min(0).max(100).optional(),
         uifEmployerRate: z.number().min(0).max(100).optional(),
+        timezone: z.string().min(1).max(100).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

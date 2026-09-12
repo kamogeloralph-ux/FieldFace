@@ -143,6 +143,7 @@ export const authRouter = router({
         email: platformProfile.email,
         role: "owner" as const,
         employer: { id: employer.id, name: employer.name },
+        isPlatformAdmin: true,
       };
     }
     if (!profile) return null;
@@ -153,6 +154,7 @@ export const authRouter = router({
       email: profile.email,
       role: profile.role,
       employer: employer ? { id: employer.id, name: employer.name } : null,
+      isPlatformAdmin: false,
     };
   }),
 });

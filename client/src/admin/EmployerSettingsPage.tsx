@@ -1,34 +1,106 @@
+import { useEffect, useState } from "react";
 import { trpc } from "../lib/trpc";
 
-export default function EmployerSettingsPage() {
-  const employer = trpc.employers.getMine.useQuery();
+type Form = {
+  name: string;
+  taxNumber: string;
+  companyRegNumber: string;
+  address: string;
+  contactPhone: string;
+  contactEmail: string;
+  timezone: string;
+  uifEnabled: boolean;
+  uifEmployeeRate: string;
+  uifEmployerRate: string;
+};
 
-  if (employer.isLoading) return <p className="text-slate-500">Loading company details...</p>;
+const emptyForm: Form = {
+  name: "", taxNumber: "", companyRegNumber: "", address: "", contactPhone: "", contactEmail: "",
+  timezone: "Africa/Johannesburg", uifEnabled: false, uifEmployeeRate: "1.00", uifEmployerRate: "1.00",
+};
+
+export default function EmployerSettingsPage() {
+  const me = trpc.auth.adminMe.useQuery();
+  const employer = trpc.employers.getMine.useQuery();
+  const utils = trpc.useUtils();
+  const update = trpc.employers.updateMine.useMutation({
+    onSuccess: async () => {
+      await utils.employers.getMine.invalidate();
+      setSaved(true);
+    },
+  });
+  const [form, setForm] = useState<Form>(emptyForm);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!employer.data) return;
+    setForm({
+      name: employer.data.name,
+      taxNumber: employer.data.taxNumber ?? "",
+      companyRegNumber: employer.data.companyRegNumber ?? "",
+      address: employer.data.address ?? "",
+      contactPhone: employer.data.contactPhone ?? "",
+      contactEmail: employer.data.contactEmail ?? "",
+      timezone: employer.data.timezone ?? "Africa/Johannesburg",
+      uifEnabled: employer.data.uifEnabled,
+      uifEmployeeRate: employer.data.uifEmployeeRate ?? "1.00",
+      uifEmployerRate: employer.data.uifEmployerRate ?? "1.00",
+    });
+  }, [employer.data]);
+
+  if (employer.isLoading || me.isLoading) return <p className="text-slate-500">Loading company details...</p>;
   if (!employer.data) return <p className="text-slate-500">Company details are unavailable.</p>;
 
-  const fields = [
-    ["Company name", employer.data.name],
-    ["Tax number", employer.data.taxNumber],
-    ["Registration number", employer.data.companyRegNumber],
-    ["Address", employer.data.address],
-    ["Contact phone", employer.data.contactPhone],
-    ["Contact email", employer.data.contactEmail],
-  ];
+  const canEdit = me.data?.isPlatformAdmin === true;
+  const setField = <K extends keyof Form>(field: K, value: Form[K]) => {
+    setSaved(false);
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  function save() {
+    if (!canEdit || !form.name.trim()) return;
+    update.mutate({
+      employerId: employer.data!.id,
+      name: form.name.trim(),
+      taxNumber: form.taxNumber || undefined,
+      companyRegNumber: form.companyRegNumber || undefined,
+      address: form.address || undefined,
+      contactPhone: form.contactPhone || undefined,
+      contactEmail: form.contactEmail || undefined,
+      timezone: form.timezone,
+      uifEnabled: form.uifEnabled,
+      uifEmployeeRate: Number(form.uifEmployeeRate),
+      uifEmployerRate: Number(form.uifEmployerRate),
+    });
+  }
+
+  if (!canEdit) {
+    const fields = [
+      ["Company name", employer.data.name], ["Tax number", employer.data.taxNumber],
+      ["Registration number", employer.data.companyRegNumber], ["Address", employer.data.address],
+      ["Contact phone", employer.data.contactPhone], ["Contact email", employer.data.contactEmail],
+      ["Timezone", employer.data.timezone],
+    ];
+    return <div><h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1><div className="card max-w-lg space-y-4"><p className="text-sm text-slate-600">Company details are managed by the FieldFace administrator. Contact admin if anything needs to change.</p><div className="divide-y divide-slate-100">{fields.map(([label, value]) => <div key={label} className="py-3 first:pt-0 last:pb-0"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="text-slate-800 mt-1">{value || "Not provided"}</p></div>)}</div><p className="text-xs text-slate-500">UIF settings are also controlled by the administrator.</p></div></div>;
+  }
 
   return (
     <div>
       <h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1>
-      <div className="card max-w-lg space-y-4">
-        <p className="text-sm text-slate-600">Company details are managed by the FieldFace administrator. Contact admin if anything needs to change.</p>
-        <div className="divide-y divide-slate-100">
-          {fields.map(([label, value]) => (
-            <div key={label} className="py-3 first:pt-0 last:pb-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-              <p className="text-slate-800 mt-1">{value || "Not provided"}</p>
-            </div>
-          ))}
+      <div className="card max-w-2xl space-y-4">
+        <p className="text-sm text-emerald-700">Platform administrator mode: you can edit this company.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="text-xs text-slate-500">Company name<input className="input-field mt-1" value={form.name} onChange={(e) => setField("name", e.target.value)} /></label>
+          <label className="text-xs text-slate-500">Tax number<input className="input-field mt-1" value={form.taxNumber} onChange={(e) => setField("taxNumber", e.target.value)} /></label>
+          <label className="text-xs text-slate-500">Registration number<input className="input-field mt-1" value={form.companyRegNumber} onChange={(e) => setField("companyRegNumber", e.target.value)} /></label>
+          <label className="text-xs text-slate-500">Contact phone<input className="input-field mt-1" value={form.contactPhone} onChange={(e) => setField("contactPhone", e.target.value)} /></label>
+          <label className="text-xs text-slate-500 sm:col-span-2">Contact email<input className="input-field mt-1" type="email" value={form.contactEmail} onChange={(e) => setField("contactEmail", e.target.value)} /></label>
         </div>
-        <p className="text-xs text-slate-500">UIF settings are also controlled by the administrator.</p>
+        <label className="text-xs text-slate-500">Address<textarea className="input-field mt-1" value={form.address} onChange={(e) => setField("address", e.target.value)} /></label>
+        <label className="text-xs text-slate-500">Timezone<input className="input-field mt-1" value={form.timezone} onChange={(e) => setField("timezone", e.target.value)} placeholder="Africa/Johannesburg" /></label>
+        <div className="border-t border-slate-100 pt-4 space-y-3"><p className="font-semibold text-slate-800">UIF settings</p><label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={form.uifEnabled} onChange={(e) => setField("uifEnabled", e.target.checked)} /> Enable UIF deduction</label>{form.uifEnabled && <div className="grid grid-cols-2 gap-3"><label className="text-xs text-slate-500">Employee rate %<input className="input-field mt-1" type="number" min="0" max="100" step="0.01" value={form.uifEmployeeRate} onChange={(e) => setField("uifEmployeeRate", e.target.value)} /></label><label className="text-xs text-slate-500">Employer rate %<input className="input-field mt-1" type="number" min="0" max="100" step="0.01" value={form.uifEmployerRate} onChange={(e) => setField("uifEmployerRate", e.target.value)} /></label></div>}</div>
+        <div className="flex items-center gap-3"><button className="btn-primary" onClick={save} disabled={update.isPending}>{update.isPending ? "Saving..." : "Save company settings"}</button>{saved && <span className="text-sm text-emerald-700">Saved.</span>}</div>
+        {update.error && <p className="text-sm text-red-600">{update.error.message}</p>}
       </div>
     </div>
   );
