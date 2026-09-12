@@ -102,6 +102,13 @@ export const authRouter = router({
 
       const [profile] = await db.select().from(adminUsers).where(eq(adminUsers.id, user.id));
       if (!profile) {
+        const [platformProfile] = await db.select({ id: platformAdmins.id }).from(platformAdmins).where(eq(platformAdmins.id, user.id));
+        if (platformProfile) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "This is a platform-owner account. Sign in through the Owner Platform portal at /admin.html, not the company management portal.",
+          });
+        }
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "This account isn't set up as a supervisor. Ask the platform owner to add you.",
