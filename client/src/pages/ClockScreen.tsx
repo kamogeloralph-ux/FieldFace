@@ -148,8 +148,9 @@ export default function ClockScreen() {
 
   return (
     <div className="app-wallpaper min-h-screen max-w-sm mx-auto flex flex-col px-5 py-6">
-      <header className="flex items-center justify-between mb-5">
-        <div>
+      <header className="relative flex items-center justify-between mb-5">
+        <EmployeeMenu />
+        <div className="absolute inset-x-0 text-center pointer-events-none">
           <p className="text-xs text-slate-500">Logged in as</p>
           <p className="font-semibold text-slate-800">{me.data?.fullName}</p>
         </div>
@@ -160,7 +161,6 @@ export default function ClockScreen() {
           >
             Log out
           </button>
-          <EmployeeMenu />
         </div>
       </header>
 
