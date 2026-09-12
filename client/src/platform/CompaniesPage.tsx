@@ -30,7 +30,7 @@ export default function CompaniesPage() {
   const [managerCompanyId, setManagerCompanyId] = useState("");
   const [managerName, setManagerName] = useState("");
   const [managerUsername, setManagerUsername] = useState("");
-  const [managerPassword, setManagerPassword] = useState("");
+  const [managerActivationCode, setManagerActivationCode] = useState<string | null>(null);
   const employees = trpc.platform.listCompanyEmployees.useQuery(
     { employerId: selected?.id ?? "00000000-0000-0000-0000-000000000000" },
     { enabled: !!selected },
@@ -47,11 +47,11 @@ export default function CompaniesPage() {
 
   async function handleCreateManager(e: React.FormEvent) {
     e.preventDefault();
-    if (!managerCompanyId || !managerName.trim() || !managerUsername.trim() || !managerPassword) return;
-    await createManager.mutateAsync({ employerId: managerCompanyId, fullName: managerName.trim(), username: managerUsername.trim().toLowerCase(), password: managerPassword });
+    if (!managerCompanyId || !managerName.trim() || !managerUsername.trim()) return;
+    const result = await createManager.mutateAsync({ employerId: managerCompanyId, fullName: managerName.trim(), username: managerUsername.trim().toLowerCase() });
     setManagerName("");
     setManagerUsername("");
-    setManagerPassword("");
+    setManagerActivationCode(result.activationCode);
   }
 
   async function handleManage(employerId: string) {
@@ -76,10 +76,11 @@ export default function CompaniesPage() {
       </form>
 
       <form onSubmit={handleCreateManager} className="card max-w-2xl space-y-3 mb-5">
-        <div><p className="font-semibold text-slate-800">Add company manager</p><p className="text-xs text-slate-500 mt-1">Each manager receives a separate username and password. They sign in with the company code shown below.</p></div>
+        <div><p className="font-semibold text-slate-800">Add company manager</p><p className="text-xs text-slate-500 mt-1">Each manager receives a separate username and creates their own password with a one-time activation code.</p></div>
         <select className="input-field" value={managerCompanyId} onChange={(e) => setManagerCompanyId(e.target.value)} required><option value="">Select company</option>{companies.data?.map((c) => <option key={c.id} value={c.id}>{c.name} · {c.companyCode ?? "code pending"}</option>)}</select>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><input className="input-field" placeholder="Full name" value={managerName} onChange={(e) => setManagerName(e.target.value)} required /><input className="input-field" placeholder="Username" value={managerUsername} onChange={(e) => setManagerUsername(e.target.value.toLowerCase())} pattern="[a-z0-9._-]+" required /><input className="input-field" type="password" minLength={8} placeholder="Password (8+ chars)" value={managerPassword} onChange={(e) => setManagerPassword(e.target.value)} required /></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><input className="input-field" placeholder="Full name" value={managerName} onChange={(e) => setManagerName(e.target.value)} required /><input className="input-field" placeholder="Username" value={managerUsername} onChange={(e) => setManagerUsername(e.target.value.toLowerCase())} pattern="[a-z0-9._-]+" required /></div>
         {createManager.error && <p className="text-sm text-red-600">{createManager.error.message}</p>}
+        {managerActivationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Manager activation code</p><p className="font-mono text-lg tracking-widest mt-1">{managerActivationCode}</p><p className="text-xs mt-1">Give this code to the manager with their company code and username. They activate at <strong>/company/activate</strong>. It expires in 48 hours and can be used once.</p></div>}
         <button className="btn-secondary sm:w-auto px-4" type="submit" disabled={createManager.isPending}>{createManager.isPending ? "Creating..." : "Create manager login"}</button>
       </form>
 

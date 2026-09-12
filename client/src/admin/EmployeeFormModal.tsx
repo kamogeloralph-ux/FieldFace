@@ -56,10 +56,12 @@ export default function EmployeeFormModal({
 
   const [form, setForm] = useState<EmployeeFormValues>(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [activationCode, setActivationCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setError(null);
+    setActivationCode(null);
     if (editing) {
       setForm({
         employeeCode: editing.employeeCode,
@@ -99,7 +101,7 @@ export default function EmployeeFormModal({
           siteId: form.siteId || null,
         });
       } else {
-        await createEmployee.mutateAsync({
+        const created = await createEmployee.mutateAsync({
           employeeCode: form.employeeCode.trim(),
           fullName: form.fullName.trim(),
           taxNumber: form.taxNumber,
@@ -109,8 +111,9 @@ export default function EmployeeFormModal({
           hourlyRateWeekday: Number(form.hourlyRateWeekday),
           hourlyRateWeekend: Number(form.hourlyRateWeekend),
           siteId: form.siteId || undefined,
-          pin: form.pin,
         });
+        setActivationCode(created.activationCode);
+        return;
       }
       onClose();
     } catch (err) {
@@ -167,16 +170,6 @@ export default function EmployeeFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input className="input-field" placeholder="Weekday rate / hr" type="number" step="0.01" value={form.hourlyRateWeekday} readOnly={isEditing} onChange={(e) => setForm((f) => ({ ...f, hourlyRateWeekday: e.target.value }))} required />
           <input className="input-field" placeholder="Weekend rate / hr" type="number" step="0.01" value={form.hourlyRateWeekend} readOnly={isEditing} onChange={(e) => setForm((f) => ({ ...f, hourlyRateWeekend: e.target.value }))} required />
-          {!isEditing && (
-            <input
-              className="input-field"
-              placeholder="Starting PIN (4-8 digits)"
-              inputMode="numeric"
-              value={form.pin}
-              onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value.replace(/\D/g, "") }))}
-              required
-            />
-          )}
         </div>
 
         {isEditing && (
@@ -185,7 +178,9 @@ export default function EmployeeFormModal({
           </p>
         )}
 
+        {!isEditing && <p className="text-xs text-slate-500">The employee will create their own PIN using the one-time activation code shown after saving.</p>}
         {error && <p className="text-red-600 text-sm">{error}</p>}
+        {activationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Employee activation code</p><p className="font-mono text-lg tracking-widest mt-1">{activationCode}</p><p className="text-xs mt-1">Give this code to the employee. They activate at <strong>/activate</strong>. It expires in 48 hours and can be used once.</p></div>}
 
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4">
           <div className="max-w-xl mx-auto flex gap-3">

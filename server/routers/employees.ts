@@ -6,6 +6,8 @@ import { adminProcedure, platformProcedure, router } from "../trpc";
 import { hashPin } from "../auth";
 import { TRPCError } from "@trpc/server";
 import { writeAudit } from "../audit";
+import { randomBytes } from "node:crypto";
+import { hashPassword } from "../auth";
 
 const employeeBase = {
   fullName: z.string().min(1),
@@ -34,7 +36,6 @@ export const employeesRouter = router({
       z.object({
         ...employeeBase,
         employeeCode: z.string().min(1),
-        pin: z.string().min(4).max(8),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -46,7 +47,8 @@ export const employeesRouter = router({
         throw new TRPCError({ code: "CONFLICT", message: "That employee code is already in use." });
       }
 
-      const pinHash = await hashPin(input.pin);
+      const activationCode = randomBytes(5).toString("hex").toUpperCase();
+      const activationCodeHash = await hashPassword(activationCode);
       const [created] = await db
         .insert(employees)
         .values({
@@ -58,12 +60,14 @@ export const employeesRouter = router({
           physicalAddress: input.physicalAddress,
           phone: input.phone,
           email: input.email || undefined,
-          pinHash,
+          pinHash: null,
+          activationCodeHash,
+          activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
           hourlyRateWeekday: input.hourlyRateWeekday.toString(),
           hourlyRateWeekend: input.hourlyRateWeekend.toString(),
         })
         .returning();
-      return sanitize(created);
+      return { ...sanitize(created), activationCode };
     }),
 
   update: adminProcedure

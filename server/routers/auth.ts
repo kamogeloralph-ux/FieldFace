@@ -8,6 +8,8 @@ import {
   clearEmployeeSession,
   issueAdminSession,
   issueEmployeeSessionWithPreference,
+  hashPin,
+  hashPassword,
   verifyPin,
   verifyPassword,
 } from "../auth";
@@ -55,7 +57,7 @@ export const authRouter = router({
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
       }
 
-      const pinOk = await verifyPin(input.pin, employee.pinHash);
+      const pinOk = employee.pinHash ? await verifyPin(input.pin, employee.pinHash) : false;
       if (!pinOk) {
         recordLoginFailure(failureKey);
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
@@ -74,6 +76,25 @@ export const authRouter = router({
         employeeCode: employee.employeeCode,
         siteId: employee.siteId,
       };
+    }),
+
+  activateEmployee: publicProcedure
+    .input(z.object({ companyCode: z.string().min(1), employeeCode: z.string().min(1), activationCode: z.string().min(1), pin: z.string().regex(/^\d{4,8}$/) }))
+    .mutation(async ({ input }) => {
+      const [employee] = await db.select({ employee: employees }).from(employees).innerJoin(employers, eq(employees.employerId, employers.id)).where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true))).then((rows) => rows.map((row) => row.employee));
+      if (!employee?.activationCodeHash || !employee.activationExpiresAt || employee.activationExpiresAt < new Date() || !(await verifyPassword(input.activationCode.trim().toUpperCase(), employee.activationCodeHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Activation details are invalid or expired." });
+      await db.update(employees).set({ pinHash: await hashPin(input.pin), activationCodeHash: null, activationExpiresAt: null }).where(eq(employees.id, employee.id));
+      return { success: true as const };
+    }),
+
+  activateManager: publicProcedure
+    .input(z.object({ companyCode: z.string().min(1), username: z.string().min(1), activationCode: z.string().min(1), password: z.string().min(8) }))
+    .mutation(async ({ input }) => {
+      const [result] = await db.select({ profile: adminUsers }).from(adminUsers).innerJoin(employers, eq(adminUsers.employerId, employers.id)).where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(adminUsers.username, input.username.trim().toLowerCase())));
+      const profile = result?.profile;
+      if (!profile?.activationCodeHash || !profile.activationExpiresAt || profile.activationExpiresAt < new Date() || !(await verifyPassword(input.activationCode.trim().toUpperCase(), profile.activationCodeHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Activation details are invalid or expired." });
+      await db.update(adminUsers).set({ passwordHash: await hashPassword(input.password), activationCodeHash: null, activationExpiresAt: null }).where(eq(adminUsers.id, profile.id));
+      return { success: true as const };
     }),
 
   employeeLogout: publicProcedure.mutation(({ ctx }) => {

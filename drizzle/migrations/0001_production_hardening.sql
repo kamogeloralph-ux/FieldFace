@@ -14,6 +14,11 @@ update public.employers set company_code = 'FF-' || upper(substr(replace(id::tex
 create unique index if not exists employers_company_code_idx on public.employers(company_code);
 alter table public.admin_users add column if not exists username text;
 alter table public.admin_users add column if not exists password_hash text;
+alter table public.admin_users add column if not exists activation_code_hash text;
+alter table public.admin_users add column if not exists activation_expires_at timestamptz;
+alter table public.employees alter column pin_hash drop not null;
+alter table public.employees add column if not exists activation_code_hash text;
+alter table public.employees add column if not exists activation_expires_at timestamptz;
 alter table public.platform_admins add column if not exists support_whatsapp text;
 alter table public.platform_admins add column if not exists support_phone text;
 alter table public.platform_admins add column if not exists support_email text;

@@ -68,6 +68,8 @@ export const adminUsers = pgTable("admin_users", {
   email: text("email").notNull(),
   username: text("username"),
   passwordHash: text("password_hash"),
+  activationCodeHash: text("activation_code_hash"),
+  activationExpiresAt: timestamp("activation_expires_at", { withTimezone: true }),
   role: text("role", { enum: ["owner", "supervisor"] }).notNull().default("supervisor"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -97,7 +99,9 @@ export const employees = pgTable("employees", {
   physicalAddress: text("physical_address"),
   phone: text("phone"),
   email: text("email"),
-  pinHash: text("pin_hash").notNull(), // bcrypt hash of a 4-6 digit PIN
+  pinHash: text("pin_hash"), // bcrypt hash of the employee-selected PIN
+  activationCodeHash: text("activation_code_hash"),
+  activationExpiresAt: timestamp("activation_expires_at", { withTimezone: true }),
   hourlyRateWeekday: numeric("hourly_rate_weekday", { precision: 10, scale: 2 }).notNull(),
   hourlyRateWeekend: numeric("hourly_rate_weekend", { precision: 10, scale: 2 }).notNull(),
   active: boolean("active").notNull().default(true),
