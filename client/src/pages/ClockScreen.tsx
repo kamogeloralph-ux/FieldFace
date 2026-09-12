@@ -150,9 +150,9 @@ export default function ClockScreen() {
     <div className="app-wallpaper min-h-screen max-w-sm mx-auto flex flex-col px-5 py-6">
       <header className="relative flex items-center justify-between mb-5">
         <EmployeeMenu />
-        <div className="absolute inset-x-0 text-center pointer-events-none">
+        <div className="absolute inset-x-0 mx-auto max-w-[58%] text-center pointer-events-none">
           <p className="text-xs text-slate-500">Logged in as</p>
-          <p className="font-semibold text-slate-800">{me.data?.fullName}</p>
+          <p className="font-semibold text-slate-800 truncate" title={me.data?.fullName}>{me.data?.fullName}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -187,7 +187,7 @@ export default function ClockScreen() {
               {detailsOpen && !status.data.site.referencePhotoUrl && <p className="px-4 pb-3 text-sm text-slate-500">Stand at the designated site before taking your selfie.</p>}
             </div>
           )}
-          {schedule.data && <div className="card flex items-center justify-between gap-3"><div><p className="text-xs text-slate-500">Company schedule</p><p className="font-semibold text-slate-800 truncate">{schedule.data.name}</p></div><a href={schedule.data.url} target="_blank" rel="noreferrer" className="btn-secondary w-auto px-3 py-2 text-sm">View</a></div>}
+          {schedule.data && <div className="card flex items-center justify-between gap-3"><div className="min-w-0 flex-1"><p className="text-xs text-slate-500">Company schedule</p><p className="font-semibold text-slate-800 truncate" title={schedule.data.name}>{schedule.data.name}</p></div><a href={schedule.data.url} target="_blank" rel="noreferrer" className="btn-secondary w-auto shrink-0 px-3 py-2 text-sm">View</a></div>}
         </div>
       )}
 
