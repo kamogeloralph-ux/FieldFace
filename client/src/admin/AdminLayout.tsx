@@ -19,7 +19,7 @@ export default function AdminLayout() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <div className="admin-shell min-h-screen">
+    <div className="admin-shell app-wallpaper min-h-screen">
       {menuOpen && <button className="admin-drawer-backdrop" aria-label="Close navigation" onClick={closeMenu} />}
       <aside className={`admin-sidebar ${menuOpen ? "is-open" : ""}`}>
         <div className="mb-6">

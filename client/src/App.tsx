@@ -22,7 +22,7 @@ function RequireCompanyAdmin({ children }: { children: React.ReactNode }) {
     if (me.isSuccess && me.data === null) navigate("/company/login");
   }, [me.isSuccess, me.data, navigate]);
 
-  if (me.isLoading) return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
+  if (me.isLoading) return <div className="app-wallpaper min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
   if (!me.data) return null;
   return <>{children}</>;
 }

@@ -138,14 +138,14 @@ export default function ClockScreen() {
   }
 
   if (me.isLoading || status.isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
+    return <div className="app-wallpaper min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
   }
 
   const nextAction = status.data?.nextAction ?? "clock_in";
   const actionLabel = nextAction === "clock_in" ? "Clock In" : "Clock Out";
 
   return (
-    <div className="min-h-screen max-w-sm mx-auto flex flex-col px-5 py-6">
+    <div className="app-wallpaper min-h-screen max-w-sm mx-auto flex flex-col px-5 py-6">
       <header className="flex items-center justify-between mb-5">
         <div>
           <p className="text-xs text-slate-500">Logged in as</p>
