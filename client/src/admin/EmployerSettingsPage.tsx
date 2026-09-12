@@ -8,9 +8,6 @@ type Form = {
   address: string;
   contactPhone: string;
   contactEmail: string;
-  supportWhatsapp: string;
-  supportPhone: string;
-  supportEmail: string;
   timezone: string;
   uifEnabled: boolean;
   uifEmployeeRate: string;
@@ -18,23 +15,19 @@ type Form = {
 };
 
 const emptyForm: Form = {
-  name: "", taxNumber: "", companyRegNumber: "", address: "", contactPhone: "", contactEmail: "", supportWhatsapp: "", supportPhone: "", supportEmail: "",
+  name: "", taxNumber: "", companyRegNumber: "", address: "", contactPhone: "", contactEmail: "",
   timezone: "Africa/Johannesburg", uifEnabled: false, uifEmployeeRate: "1.00", uifEmployerRate: "1.00",
 };
 
 export default function EmployerSettingsPage() {
   const me = trpc.auth.adminMe.useQuery();
   const employer = trpc.employers.getMine.useQuery();
-  const platformSupport = trpc.employers.getPlatformSupport.useQuery(undefined, { enabled: me.data?.isPlatformAdmin === true });
   const utils = trpc.useUtils();
   const update = trpc.employers.updateMine.useMutation({
     onSuccess: async () => {
       await utils.employers.getMine.invalidate();
       setSaved(true);
     },
-  });
-  const updateSupport = trpc.employers.updateSupport.useMutation({
-    onSuccess: async () => { await utils.employers.getMine.invalidate(); setSaved(true); },
   });
   const deductions = trpc.employers.listDeductions.useQuery(undefined, { enabled: me.data?.isPlatformAdmin === true });
   const companyEmployees = trpc.employees.list.useQuery(undefined, { enabled: me.data?.isPlatformAdmin === true });
@@ -57,20 +50,12 @@ export default function EmployerSettingsPage() {
       address: employer.data.address ?? "",
       contactPhone: employer.data.contactPhone ?? "",
       contactEmail: employer.data.contactEmail ?? "",
-      supportWhatsapp: employer.data.supportWhatsapp ?? "",
-      supportPhone: employer.data.supportPhone ?? "",
-      supportEmail: employer.data.supportEmail ?? "",
       timezone: employer.data.timezone ?? "Africa/Johannesburg",
       uifEnabled: employer.data.uifEnabled,
       uifEmployeeRate: employer.data.uifEmployeeRate ?? "1.00",
       uifEmployerRate: employer.data.uifEmployerRate ?? "1.00",
     });
   }, [employer.data]);
-
-  useEffect(() => {
-    if (!platformSupport.data) return;
-    setForm((current) => ({ ...current, supportWhatsapp: platformSupport.data.supportWhatsapp ?? "", supportPhone: platformSupport.data.supportPhone ?? "", supportEmail: platformSupport.data.supportEmail ?? "" }));
-  }, [platformSupport.data]);
 
   if (employer.isLoading || me.isLoading) return <p className="text-slate-500">Loading company details...</p>;
   if (!employer.data) return <p className="text-slate-500">Company details are unavailable.</p>;
@@ -98,10 +83,6 @@ export default function EmployerSettingsPage() {
     });
   }
 
-  function saveSupport() {
-    updateSupport.mutate({ supportWhatsapp: form.supportWhatsapp, supportPhone: form.supportPhone, supportEmail: form.supportEmail });
-  }
-
   function addDeduction() {
     const amount = Number(deductionAmount);
     if (!deductionName.trim() || !Number.isFinite(amount) || amount < 0) return;
@@ -126,7 +107,6 @@ export default function EmployerSettingsPage() {
       <h1 className="text-xl font-bold text-slate-800 mb-2">Company settings</h1>
       <div className="card max-w-2xl space-y-4">
         <p className="text-sm text-emerald-700">Platform administrator mode: you can edit this company.</p>
-        <div className="rounded-xl bg-emerald-50 p-3 space-y-3"><div><p className="font-semibold text-emerald-900">Client support</p><p className="text-xs text-emerald-700 mt-1">These contacts appear on the public welcome screen.</p></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><label className="text-xs text-slate-500">WhatsApp number<input className="input-field mt-1" value={form.supportWhatsapp} onChange={(e) => setField("supportWhatsapp", e.target.value)} placeholder="e.g. +27 71 234 5678" /></label><label className="text-xs text-slate-500">Phone number<input className="input-field mt-1" value={form.supportPhone} onChange={(e) => setField("supportPhone", e.target.value)} placeholder="e.g. +27 11 234 5678" /></label><label className="text-xs text-slate-500">Support email<input className="input-field mt-1" type="email" value={form.supportEmail} onChange={(e) => setField("supportEmail", e.target.value)} placeholder="support@yourcompany.com" /></label></div><button type="button" className="btn-secondary sm:w-auto px-4 py-2" onClick={saveSupport} disabled={updateSupport.isPending}>{updateSupport.isPending ? "Saving..." : "Save support contacts"}</button></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="text-xs text-slate-500">Company name<input className="input-field mt-1" value={form.name} onChange={(e) => setField("name", e.target.value)} /></label>
           <label className="text-xs text-slate-500">Tax number<input className="input-field mt-1" value={form.taxNumber} onChange={(e) => setField("taxNumber", e.target.value)} /></label>
