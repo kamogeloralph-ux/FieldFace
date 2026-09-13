@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { and, eq, inArray, isNotNull, or } from "drizzle-orm";
 import { db } from "../db";
-import { companyDeductionEmployees, companyDeductions, employees, employers, platformAdmins } from "../../drizzle/schema";
+import { companyDeductionEmployees, companyDeductions, employees, employers, platformAdmins, positionWageRates } from "../../drizzle/schema";
 import { adminProcedure, employeeProcedure, ownerProcedure, platformProcedure, publicProcedure, router } from "../trpc";
 import { removeSchedule, signedScheduleUrl, uploadSchedule } from "../storage";
 
@@ -20,6 +20,17 @@ export const employersRouter = router({
     const [employer] = await db.select().from(employers).where(eq(employers.id, ctx.admin.employerId));
     return employer ?? null;
   }),
+
+  listPositionWageRates: adminProcedure.query(async ({ ctx }) => {
+    return db.select().from(positionWageRates).where(eq(positionWageRates.employerId, ctx.admin.employerId)).orderBy(positionWageRates.position);
+  }),
+
+  upsertPositionWageRate: ownerProcedure
+    .input(z.object({ position: z.enum(["general_worker", "supervisor", "team_leader"]), hourlyRateWeekday: z.number().finite().min(0).max(1_000_000), hourlyRateWeekend: z.number().finite().min(0).max(1_000_000) }))
+    .mutation(async ({ ctx, input }) => {
+      const [saved] = await db.insert(positionWageRates).values({ employerId: ctx.admin.employerId, position: input.position, hourlyRateWeekday: input.hourlyRateWeekday.toFixed(2), hourlyRateWeekend: input.hourlyRateWeekend.toFixed(2) }).onConflictDoUpdate({ target: [positionWageRates.employerId, positionWageRates.position], set: { hourlyRateWeekday: input.hourlyRateWeekday.toFixed(2), hourlyRateWeekend: input.hourlyRateWeekend.toFixed(2), updatedAt: new Date() } }).returning();
+      return saved;
+    }),
 
   getSchedule: employeeProcedure.query(async ({ ctx }) => {
     const [employer] = await db.select({ schedulePath: employers.schedulePath, scheduleName: employers.scheduleName, scheduleContentType: employers.scheduleContentType, scheduleUpdatedAt: employers.scheduleUpdatedAt }).from(employers).where(eq(employers.id, ctx.employee.employerId));

@@ -10,6 +10,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -113,6 +114,18 @@ export const employees = pgTable("employees", {
   selfServiceGenPeriod: text("self_service_gen_period"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const positionWageRates = pgTable("position_wage_rates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),
+  position: text("position", { enum: ["general_worker", "supervisor", "team_leader"] }).notNull(),
+  hourlyRateWeekday: numeric("hourly_rate_weekday", { precision: 10, scale: 2 }).notNull(),
+  hourlyRateWeekend: numeric("hourly_rate_weekend", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  employerPositionUnique: uniqueIndex("position_wage_rates_employer_position_idx").on(t.employerId, t.position),
+}));
 
 export const companyDeductionEmployees = pgTable("company_deduction_employees", {
   deductionId: uuid("deduction_id").references(() => companyDeductions.id, { onDelete: "cascade" }).notNull(),

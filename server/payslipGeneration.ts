@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
-import { companyDeductionEmployees, companyDeductions, employees, employers, payslips, shifts } from "../drizzle/schema";
+import { companyDeductionEmployees, companyDeductions, employees, employers, payslips, positionWageRates, shifts } from "../drizzle/schema";
 import { computeCompanyDeductions, computePayroll, computeUifDeduction } from "./payroll";
 import { generatePayslipPdf } from "./pdf/payslip";
 import { uploadPayslipPdf } from "./storage";
@@ -22,7 +22,10 @@ export async function generatePayslipForEmployee(
   const allShifts = await db.select().from(shifts).where(eq(shifts.employeeId, employee.id));
   const periodShifts = allShifts.filter((s) => s.shiftDate >= from && s.shiftDate <= to);
 
-  const totals = computePayroll(periodShifts, employee.hourlyRateWeekday, employee.hourlyRateWeekend);
+  const [positionRate] = await db.select().from(positionWageRates).where(and(eq(positionWageRates.employerId, employerId), eq(positionWageRates.position, employee.position)));
+  const hourlyRateWeekday = positionRate?.hourlyRateWeekday ?? employee.hourlyRateWeekday;
+  const hourlyRateWeekend = positionRate?.hourlyRateWeekend ?? employee.hourlyRateWeekend;
+  const totals = computePayroll(periodShifts, hourlyRateWeekday, hourlyRateWeekend);
   const uifDeduction = computeUifDeduction(totals.grossPay, employer.uifEnabled, employer.uifEmployeeRate);
   const configuredDeductions = await db.select().from(companyDeductions).where(and(eq(companyDeductions.employerId, employerId), eq(companyDeductions.active, true)));
   const selectedAssignments = await db.select().from(companyDeductionEmployees).where(eq(companyDeductionEmployees.employeeId, employee.id));
@@ -49,8 +52,8 @@ export async function generatePayslipForEmployee(
     weekdayHours: totals.weekdayHours,
     weekendHours: totals.weekendHours,
     totalHours: totals.totalHours,
-    hourlyRateWeekday: Number(employee.hourlyRateWeekday),
-    hourlyRateWeekend: Number(employee.hourlyRateWeekend),
+    hourlyRateWeekday: Number(hourlyRateWeekday),
+    hourlyRateWeekend: Number(hourlyRateWeekend),
     grossPay: totals.grossPay,
     uifDeduction,
     companyDeductions: deductionDetails,
@@ -69,8 +72,8 @@ export async function generatePayslipForEmployee(
       weekdayHours: totals.weekdayHours.toString(),
       weekendHours: totals.weekendHours.toString(),
       totalHours: totals.totalHours.toString(),
-      hourlyRateWeekday: employee.hourlyRateWeekday,
-      hourlyRateWeekend: employee.hourlyRateWeekend,
+      hourlyRateWeekday,
+      hourlyRateWeekend,
       grossPay: totals.grossPay.toString(),
       uifDeduction: uifDeduction.toString(),
       deductionDetails,

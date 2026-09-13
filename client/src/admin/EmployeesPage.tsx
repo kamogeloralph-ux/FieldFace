@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { trpc } from "../lib/trpc";
 import EmployeeFormModal, { type EditingEmployee } from "./EmployeeFormModal";
 
 export default function EmployeesPage() {
+  const me = trpc.auth.adminMe.useQuery();
   const employees = trpc.employees.list.useQuery();
   const resetPassword = trpc.employees.resetPassword.useMutation();
 
@@ -28,6 +29,7 @@ export default function EmployeesPage() {
         </button>
       </div>
 
+      {me.data?.role === "owner" && <PositionWageSettings />}
       <div className="space-y-2">
         {employees.data?.map((emp) => (
           <div key={emp.id} className="card flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -64,4 +66,25 @@ export default function EmployeesPage() {
       <EmployeeFormModal open={modalOpen} onClose={() => setModalOpen(false)} editing={editing} />
     </div>
   );
+}
+
+function PositionWageSettings() {
+  const rates = trpc.employers.listPositionWageRates.useQuery();
+  const utils = trpc.useUtils();
+  const saveRate = trpc.employers.upsertPositionWageRate.useMutation({ onSuccess: () => utils.employers.listPositionWageRates.invalidate() });
+  const [values, setValues] = useState<Record<string, { weekday: string; weekend: string }>>({
+    general_worker: { weekday: "", weekend: "" },
+    supervisor: { weekday: "", weekend: "" },
+    team_leader: { weekday: "", weekend: "" },
+  });
+  useEffect(() => {
+    if (!rates.data) return;
+    setValues((current) => {
+      const next = { ...current };
+      for (const rate of rates.data) next[rate.position] = { weekday: rate.hourlyRateWeekday, weekend: rate.hourlyRateWeekend };
+      return next;
+    });
+  }, [rates.data]);
+  const labels = { general_worker: "General worker", supervisor: "Supervisor", team_leader: "Team leader" } as const;
+  return <section className="card mb-5"><h2 className="font-semibold text-slate-800">Position wage rates</h2><p className="text-xs text-slate-500 mt-1 mb-3">Payslips use these hourly rates for each employee position. Existing employee rates are used only until a position rate is configured.</p><div className="space-y-2">{(Object.keys(labels) as (keyof typeof labels)[]).map((position) => <div key={position} className="grid grid-cols-1 sm:grid-cols-[1fr_9rem_9rem_auto] gap-2 items-center"><span className="text-sm font-medium text-slate-700">{labels[position]}</span><input className="input-field" type="number" min="0" step="0.01" placeholder="Weekday / hr" value={values[position]?.weekday ?? ""} onChange={(e) => setValues((current) => ({ ...current, [position]: { ...current[position], weekday: e.target.value } }))} /><input className="input-field" type="number" min="0" step="0.01" placeholder="Weekend / hr" value={values[position]?.weekend ?? ""} onChange={(e) => setValues((current) => ({ ...current, [position]: { ...current[position], weekend: e.target.value } }))} /><button type="button" className="btn-secondary w-auto px-3 py-2 text-sm" onClick={() => saveRate.mutate({ position, hourlyRateWeekday: Number(values[position]?.weekday), hourlyRateWeekend: Number(values[position]?.weekend) })} disabled={saveRate.isPending}>Save</button></div>)}</div>{saveRate.error && <p className="text-sm text-red-600 mt-2">{saveRate.error.message}</p>}</section>;
 }
