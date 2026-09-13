@@ -99,7 +99,7 @@ export const platformRouter = router({
     }),
 
   createManager: platformProcedure
-    .input(z.object({ employerId: z.string().uuid(), fullName: z.string().trim().min(1), email: z.string().trim().email(), idNumber: z.string().trim().min(1), phone: z.string().trim().min(1), physicalAddress: z.string().trim().min(1), role: z.enum(["owner", "supervisor"]).default("supervisor") }))
+    .input(z.object({ employerId: z.string().uuid(), fullName: z.string().trim().min(1), email: z.string().trim().email(), idNumber: z.string().trim().min(1), phone: z.string().trim().min(1), physicalAddress: z.string().trim().min(1), role: z.enum(["owner", "supervisor", "team_leader"]).default("supervisor") }))
     .mutation(async ({ input }) => {
       const [employer] = await db.select({ id: employers.id, name: employers.name }).from(employers).where(eq(employers.id, input.employerId));
       if (!employer) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });

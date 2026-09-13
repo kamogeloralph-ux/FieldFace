@@ -73,7 +73,7 @@ export const adminUsers = pgTable("admin_users", {
   passwordHash: text("password_hash"),
   activationCodeHash: text("activation_code_hash"),
   activationExpiresAt: timestamp("activation_expires_at", { withTimezone: true }),
-  role: text("role", { enum: ["owner", "supervisor"] }).notNull().default("supervisor"),
+  role: text("role", { enum: ["owner", "supervisor", "team_leader"] }).notNull().default("supervisor"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

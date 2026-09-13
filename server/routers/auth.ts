@@ -133,7 +133,7 @@ export const authRouter = router({
       issueAdminSession(ctx.res, {
         adminUserId: profile.id,
         employerId: profile.employerId,
-        role: profile.role as "owner" | "supervisor",
+        role: profile.role as "owner" | "supervisor" | "team_leader",
       }, input.rememberMe);
 
       const [employer] = await db.select().from(employers).where(eq(employers.id, profile.employerId));
