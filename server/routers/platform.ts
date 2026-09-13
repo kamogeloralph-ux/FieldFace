@@ -19,6 +19,21 @@ function companyCodePrefix(name: string) {
   return (letters.slice(0, 5) || "CO").padEnd(2, "X");
 }
 
+function managerUsernamePrefix(name: string) {
+  return name.replace(/[^a-z0-9]/gi, "").slice(0, 3).toUpperCase().padEnd(3, "X");
+}
+
+async function nextManagerUsername(employerId: string, companyName: string) {
+  const prefix = managerUsernamePrefix(companyName);
+  const rows = await db.select({ username: adminUsers.username }).from(adminUsers).where(eq(adminUsers.employerId, employerId));
+  const highest = rows.reduce((max, row) => {
+    const match = new RegExp(`^${prefix}(\\d+)$`).exec(row.username ?? "");
+    const number = match ? Number(match[1]) : 0;
+    return Number.isSafeInteger(number) ? Math.max(max, number) : max;
+  }, 0);
+  return `${prefix}${String(highest + 1).padStart(3, "0")}`;
+}
+
 export const platformRouter = router({
   login: publicProcedure
     .input(z.object({ accessToken: z.string().min(1), rememberMe: z.boolean().default(false) }))
@@ -61,6 +76,16 @@ export const platformRouter = router({
     return rows.map((row) => ({ ...row, employeeCount: employeesByEmployer.get(row.id) ?? 0, siteCount: sitesByEmployer.get(row.id) ?? 0 }));
   }),
 
+  listCompanyManagers: platformProcedure
+    .input(z.object({ employerId: z.string().uuid() }))
+    .query(async ({ input }) => {
+      return db.select({ id: adminUsers.id, fullName: adminUsers.fullName, email: adminUsers.email, idNumber: adminUsers.idNumber, phone: adminUsers.phone, physicalAddress: adminUsers.physicalAddress, username: adminUsers.username, role: adminUsers.role, createdAt: adminUsers.createdAt })
+        .from(adminUsers)
+        .where(eq(adminUsers.employerId, input.employerId))
+        .orderBy(adminUsers.createdAt)
+        .limit(100);
+    }),
+
   createCompany: platformProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ input }) => {
@@ -74,18 +99,17 @@ export const platformRouter = router({
     }),
 
   createManager: platformProcedure
-    .input(z.object({ employerId: z.string().uuid(), fullName: z.string().min(1), username: z.string().min(3).max(40).regex(/^[a-z0-9._-]+$/), role: z.enum(["owner", "supervisor"]).default("supervisor") }))
+    .input(z.object({ employerId: z.string().uuid(), fullName: z.string().trim().min(1), email: z.string().trim().email(), idNumber: z.string().trim().min(1), phone: z.string().trim().min(1), physicalAddress: z.string().trim().min(1), role: z.enum(["owner", "supervisor"]).default("supervisor") }))
     .mutation(async ({ input }) => {
-      const [employer] = await db.select({ id: employers.id, companyCode: employers.companyCode }).from(employers).where(eq(employers.id, input.employerId));
+      const [employer] = await db.select({ id: employers.id, name: employers.name }).from(employers).where(eq(employers.id, input.employerId));
       if (!employer) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
       const activationCode = randomBytes(5).toString("hex").toUpperCase();
-      const [existing] = await db.select({ id: adminUsers.id, passwordHash: adminUsers.passwordHash }).from(adminUsers).where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.toLowerCase())));
-      if (existing?.passwordHash) throw new TRPCError({ code: "CONFLICT", message: "That manager username is already in use for an activated account." });
-      if (existing) {
-        const [updated] = await db.update(adminUsers).set({ fullName: input.fullName.trim(), activationCodeHash: await hashPassword(activationCode), activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000) }).where(eq(adminUsers.id, existing.id)).returning({ id: adminUsers.id, fullName: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role });
-        return { ...updated, activationCode };
-      }
-      const [created] = await db.insert(adminUsers).values({ id: randomUUID(), employerId: input.employerId, fullName: input.fullName.trim(), email: `${input.username}@${(employer.companyCode ?? "company").toLowerCase()}.fieldface.local`, username: input.username.toLowerCase(), passwordHash: null, activationCodeHash: await hashPassword(activationCode), activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), role: input.role }).returning({ id: adminUsers.id, fullName: adminUsers.fullName, username: adminUsers.username, role: adminUsers.role });
+      const activationCodeHash = await hashPassword(activationCode);
+      const [created] = await db.transaction(async (tx) => {
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`manager-username:${input.employerId}`}))`);
+        const username = await nextManagerUsername(input.employerId, employer.name);
+        return tx.insert(adminUsers).values({ id: randomUUID(), employerId: input.employerId, fullName: input.fullName, email: input.email, idNumber: input.idNumber, phone: input.phone, physicalAddress: input.physicalAddress, username, passwordHash: null, activationCodeHash, activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), role: input.role }).returning({ id: adminUsers.id, fullName: adminUsers.fullName, email: adminUsers.email, idNumber: adminUsers.idNumber, phone: adminUsers.phone, physicalAddress: adminUsers.physicalAddress, username: adminUsers.username, role: adminUsers.role });
+      });
       return { ...created, activationCode };
     }),
 
