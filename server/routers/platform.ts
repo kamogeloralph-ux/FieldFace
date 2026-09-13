@@ -20,7 +20,7 @@ function companyCodePrefix(name: string) {
 }
 
 function managerUsernamePrefix(name: string) {
-  return name.replace(/[^a-z0-9]/gi, "").slice(0, 3).toUpperCase().padEnd(3, "X");
+  return `${name.replace(/[^a-z0-9]/gi, "").slice(0, 3).toUpperCase().padEnd(3, "X")}-MANAGER`;
 }
 
 async function nextManagerUsername(employerId: string, companyName: string) {
