@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db";
-import { employees } from "../../drizzle/schema";
+import { employees, employers } from "../../drizzle/schema";
 import { adminProcedure, platformProcedure, router } from "../trpc";
 import { hashPin } from "../auth";
 import { TRPCError } from "@trpc/server";
@@ -25,6 +25,18 @@ function sanitize(e: typeof employees.$inferSelect) {
   return rest;
 }
 
+async function nextEmployeeCode(employerId: string) {
+  const [employer] = await db.select({ name: employers.name }).from(employers).where(eq(employers.id, employerId));
+  const prefix = (employer?.name ?? "CO").replace(/[^a-z0-9]/gi, "").slice(0, 3).toUpperCase().padEnd(3, "X");
+  const rows = await db.select({ employeeCode: employees.employeeCode }).from(employees).where(eq(employees.employerId, employerId));
+  const highest = rows.reduce((max, row) => {
+    const match = new RegExp(`^${prefix}(\\d+)$`).exec(row.employeeCode);
+    const number = match ? Number(match[1]) : 0;
+    return Number.isSafeInteger(number) ? Math.max(max, number) : max;
+  }, 0);
+  return `${prefix}${String(highest + 1).padStart(3, "0")}`;
+}
+
 export const employeesRouter = router({
   list: adminProcedure.query(async ({ ctx }) => {
     const rows = await db.select().from(employees).where(eq(employees.employerId, ctx.admin.employerId));
@@ -35,26 +47,20 @@ export const employeesRouter = router({
     .input(
       z.object({
         ...employeeBase,
-        employeeCode: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existing = await db
-        .select()
-        .from(employees)
-        .where(and(eq(employees.employerId, ctx.admin.employerId), eq(employees.employeeCode, input.employeeCode)));
-      if (existing.length > 0) {
-        throw new TRPCError({ code: "CONFLICT", message: "That employee code is already in use." });
-      }
-
       const activationCode = randomBytes(5).toString("hex").toUpperCase();
       const activationCodeHash = await hashPassword(activationCode);
-      const [created] = await db
+      const [created] = await db.transaction(async (tx) => {
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`employee-number:${ctx.admin.employerId}`}))`);
+        const employeeCode = await nextEmployeeCode(ctx.admin.employerId);
+        return tx
         .insert(employees)
         .values({
           employerId: ctx.admin.employerId,
           siteId: input.siteId ?? null,
-          employeeCode: input.employeeCode,
+          employeeCode,
           fullName: input.fullName,
         taxNumber: input.taxNumber,
           physicalAddress: input.physicalAddress,
@@ -67,6 +73,7 @@ export const employeesRouter = router({
           hourlyRateWeekend: input.hourlyRateWeekend.toString(),
         })
         .returning();
+      });
       return { ...sanitize(created), activationCode };
     }),
 
@@ -74,7 +81,6 @@ export const employeesRouter = router({
     .input(
       z.object({
         id: z.string().uuid(),
-        employeeCode: z.string().min(1).optional(),
         fullName: z.string().min(1).optional(),
         taxNumber: z.string().optional(),
         physicalAddress: z.string().optional(),
@@ -90,16 +96,6 @@ export const employeesRouter = router({
         .from(employees)
         .where(and(eq(employees.id, id), eq(employees.employerId, ctx.admin.employerId)));
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-
-      if (rest.employeeCode && rest.employeeCode !== existing.employeeCode) {
-        const clash = await db
-          .select()
-          .from(employees)
-          .where(and(eq(employees.employerId, ctx.admin.employerId), eq(employees.employeeCode, rest.employeeCode)));
-        if (clash.length > 0) {
-          throw new TRPCError({ code: "CONFLICT", message: "That employee number is already in use." });
-        }
-      }
 
       const values: Record<string, unknown> = { ...rest };
       if (typeof values.hourlyRateWeekday === "number") values.hourlyRateWeekday = String(values.hourlyRateWeekday);

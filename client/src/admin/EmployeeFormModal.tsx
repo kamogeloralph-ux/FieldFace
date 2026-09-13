@@ -57,11 +57,13 @@ export default function EmployeeFormModal({
   const [form, setForm] = useState<EmployeeFormValues>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [activationCode, setActivationCode] = useState<string | null>(null);
+  const [assignedEmployeeCode, setAssignedEmployeeCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setError(null);
     setActivationCode(null);
+    setAssignedEmployeeCode(null);
     if (editing) {
       setForm({
         employeeCode: editing.employeeCode,
@@ -92,7 +94,6 @@ export default function EmployeeFormModal({
       if (isEditing && editing) {
         await updateEmployee.mutateAsync({
           id: editing.id,
-          employeeCode: form.employeeCode.trim(),
           fullName: form.fullName.trim(),
           taxNumber: form.taxNumber || undefined,
           physicalAddress: form.physicalAddress || undefined,
@@ -102,7 +103,6 @@ export default function EmployeeFormModal({
         });
       } else {
         const created = await createEmployee.mutateAsync({
-          employeeCode: form.employeeCode.trim(),
           fullName: form.fullName.trim(),
           taxNumber: form.taxNumber,
           physicalAddress: form.physicalAddress || undefined,
@@ -112,6 +112,7 @@ export default function EmployeeFormModal({
           hourlyRateWeekend: Number(form.hourlyRateWeekend),
           siteId: form.siteId || undefined,
         });
+        setAssignedEmployeeCode(created.employeeCode);
         setActivationCode(created.activationCode);
         return;
       }
@@ -138,13 +139,7 @@ export default function EmployeeFormModal({
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
             Employee number
           </label>
-          <input
-            className="input-field font-semibold"
-            placeholder="Employee number"
-            value={form.employeeCode}
-            onChange={(e) => setForm((f) => ({ ...f, employeeCode: e.target.value }))}
-            required
-          />
+          {isEditing ? <p className="input-field font-semibold bg-slate-50">{editing?.employeeCode}</p> : <p className="text-sm text-slate-500">Assigned automatically when the employee is saved.</p>}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -178,9 +173,9 @@ export default function EmployeeFormModal({
           </p>
         )}
 
-        {!isEditing && <p className="text-xs text-slate-500">The employee will create their own PIN using the one-time activation code shown after saving.</p>}
+        {!isEditing && <p className="text-xs text-slate-500">The employee number and one-time activation code will be shown after saving. The employee will use them to create their own PIN.</p>}
         {error && <p className="text-red-600 text-sm">{error}</p>}
-        {activationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Employee activation code</p><p className="font-mono text-lg tracking-widest mt-1">{activationCode}</p><p className="text-xs mt-1">Give this code to the employee. They activate at <strong>/activate</strong>. It expires in 48 hours and can be used once.</p></div>}
+        {activationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Employee number</p><p className="font-mono text-lg tracking-widest mt-1">{assignedEmployeeCode}</p><p className="font-semibold mt-3">Employee activation code</p><p className="font-mono text-lg tracking-widest mt-1">{activationCode}</p><p className="text-xs mt-1">Give both details to the employee. They use them to activate their account. The activation code expires in 48 hours and can be used once.</p></div>}
 
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4">
           <div className="max-w-xl mx-auto flex gap-3">
