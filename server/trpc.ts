@@ -27,7 +27,7 @@ export const publicProcedure = t.procedure;
 /** Requires a clocked-in employee session (mobile clocking app). */
 export const employeeProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.employee) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Please log in with your employee number and PIN." });
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Please log in with your employee number and password." });
   }
   return next({ ctx: { ...ctx, employee: ctx.employee } });
 });

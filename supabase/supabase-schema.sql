@@ -45,7 +45,7 @@ create table if not exists public.employees (
   id_number text,
   phone text,
   email text,
-  pin_hash text not null,
+  password_hash text not null,
   hourly_rate_weekday numeric(10, 2) not null,
   hourly_rate_weekend numeric(10, 2) not null,
   active boolean not null default true,

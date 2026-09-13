@@ -3,11 +3,10 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { employees, employers } from "../../drizzle/schema";
 import { adminProcedure, platformProcedure, router } from "../trpc";
-import { hashPin } from "../auth";
+import { hashPassword } from "../auth";
 import { TRPCError } from "@trpc/server";
 import { writeAudit } from "../audit";
 import { randomBytes } from "node:crypto";
-import { hashPassword } from "../auth";
 
 const employeeBase = {
   fullName: z.string().min(1),
@@ -21,7 +20,7 @@ const employeeBase = {
 };
 
 function sanitize(e: typeof employees.$inferSelect) {
-  const { pinHash, ...rest } = e;
+  const { passwordHash, ...rest } = e;
   return rest;
 }
 
@@ -66,7 +65,7 @@ export const employeesRouter = router({
           physicalAddress: input.physicalAddress,
           phone: input.phone,
           email: input.email || undefined,
-          pinHash: null,
+          passwordHash: null,
           activationCodeHash,
           activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
           hourlyRateWeekday: input.hourlyRateWeekday.toString(),
@@ -133,8 +132,8 @@ export const employeesRouter = router({
       return sanitize(updated);
     }),
 
-  resetPin: adminProcedure
-    .input(z.object({ id: z.string().uuid(), newPin: z.string().min(4).max(8) }))
+  resetPassword: adminProcedure
+    .input(z.object({ id: z.string().uuid(), newPassword: z.string().min(8).max(128) }))
     .mutation(async ({ ctx, input }) => {
       const [existing] = await db
         .select()
@@ -142,8 +141,8 @@ export const employeesRouter = router({
         .where(and(eq(employees.id, input.id), eq(employees.employerId, ctx.admin.employerId)));
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
-      const pinHash = await hashPin(input.newPin);
-      await db.update(employees).set({ pinHash }).where(eq(employees.id, input.id));
+      const passwordHash = await hashPassword(input.newPassword);
+      await db.update(employees).set({ passwordHash }).where(eq(employees.id, input.id));
       return { success: true } as const;
     }),
 });

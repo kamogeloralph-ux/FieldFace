@@ -10,8 +10,8 @@ const FEATURES = [
         <path d="M12 7v5l3 3" />
       </svg>
     ),
-    title: "Code + PIN",
-    body: "No emails to remember. Every crew member gets a short code and a private PIN.",
+    title: "Employee number + password",
+    body: "No emails to remember. Every crew member gets an employee number and a private password.",
   },
   {
     icon: (
@@ -67,7 +67,7 @@ export default function WelcomeScreen() {
         </div>
 
         <div className="space-y-3 mb-8">
-          <Link to="/clock-in" className="block rounded-2xl bg-emerald-900 text-white px-5 py-4 active:scale-[0.98] transition"><p className="font-semibold">I'm clocking in</p><p className="text-emerald-200 text-sm">Crew · code + PIN</p></Link>
+          <Link to="/clock-in" className="block rounded-2xl bg-emerald-900 text-white px-5 py-4 active:scale-[0.98] transition"><p className="font-semibold">I'm clocking in</p><p className="text-emerald-200 text-sm">Crew · employee number + password</p></Link>
           <Link to="/company/login" className="block rounded-2xl bg-white border border-slate-200 shadow-sm px-5 py-4 active:scale-[0.98] transition"><p className="font-semibold text-slate-800">Management Sign in</p><p className="text-slate-500 text-sm">Sites · crew · payslips</p></Link>
         </div>
 

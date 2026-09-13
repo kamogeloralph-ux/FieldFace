@@ -102,7 +102,7 @@ export const employees = pgTable("employees", {
   physicalAddress: text("physical_address"),
   phone: text("phone"),
   email: text("email"),
-  pinHash: text("pin_hash"), // bcrypt hash of the employee-selected PIN
+  passwordHash: text("password_hash"), // bcrypt hash of the employee-selected password
   activationCodeHash: text("activation_code_hash"),
   activationExpiresAt: timestamp("activation_expires_at", { withTimezone: true }),
   hourlyRateWeekday: numeric("hourly_rate_weekday", { precision: 10, scale: 2 }).notNull(),

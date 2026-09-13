@@ -18,7 +18,7 @@ alter table public.admin_users add column if not exists password_hash text;
 alter table public.admin_users drop constraint if exists admin_users_id_fkey;
 alter table public.admin_users add column if not exists activation_code_hash text;
 alter table public.admin_users add column if not exists activation_expires_at timestamptz;
-alter table public.employees alter column pin_hash drop not null;
+alter table public.employees alter column password_hash drop not null;
 alter table public.employees add column if not exists activation_code_hash text;
 alter table public.employees add column if not exists activation_expires_at timestamptz;
 alter table public.platform_admins add column if not exists support_whatsapp text;

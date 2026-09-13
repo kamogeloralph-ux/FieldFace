@@ -4,7 +4,7 @@ import EmployeeFormModal, { type EditingEmployee } from "./EmployeeFormModal";
 
 export default function EmployeesPage() {
   const employees = trpc.employees.list.useQuery();
-  const resetPin = trpc.employees.resetPin.useMutation();
+  const resetPassword = trpc.employees.resetPassword.useMutation();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<EditingEmployee | null>(null);
@@ -47,11 +47,11 @@ export default function EmployeesPage() {
               <button
                 className="text-sm text-slate-500 underline"
                 onClick={() => {
-                  const newPin = prompt("New PIN for " + emp.fullName + " (4-8 digits):");
-                  if (newPin) resetPin.mutate({ id: emp.id, newPin });
+                  const newPassword = prompt("New password for " + emp.fullName + " (at least 8 characters):");
+                  if (newPassword) resetPassword.mutate({ id: emp.id, newPassword });
                 }}
               >
-                Reset PIN
+                Reset password
               </button>
             </div>
           </div>

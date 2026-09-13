@@ -172,7 +172,7 @@ export const platformRouter = router({
     .input(z.object({ employerId: z.string().uuid() }))
     .query(async ({ input }) => {
       const rows = await db.select().from(employees).where(eq(employees.employerId, input.employerId));
-      return rows.map(({ pinHash, ...employee }) => employee);
+      return rows.map(({ passwordHash, ...employee }) => employee);
     }),
 
   deleteCompany: platformProcedure

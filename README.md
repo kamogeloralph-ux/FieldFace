@@ -3,11 +3,11 @@
 A GPS + selfie-verified clock-in/out system for field and public works employees,
 built for employers who don't have a clocking system yet.
 
-- **Employee app** (`/`) — enter employee number + PIN, then clock in/out by taking a
+- **Employee app** (`/`) — enter employee number + password, then clock in/out by taking a
   selfie at the supervisor-designated area. Both GPS location and the photo are
   captured and checked against a geofence around the site.
 - **Company admin app** (`/company/login`) — manage employer details, worksites (with GPS
-  point + reference photo of the designated spot), and employees (rates, PINs).
+  point + reference photo of the designated spot), and employees (rates, passwords).
   Includes a live Daily Report dashboard and monthly PDF payslip generation.
 - **Platform owner console** (`/admin/login`) — manage every company on FieldFace.
 
@@ -66,8 +66,8 @@ pnpm dev
 In the admin app: sign in → add a **Site** (use "Use my current location" while
 standing at the designated spot, set a geofence radius, upload a reference photo of
 where employees should stand) → add **Employees** (set hourly rates for weekday vs.
-weekend, assign them to the site, set a starting PIN) → give employees their employee
-code + PIN.
+weekend, assign them to the site, set a starting password) → give employees their employee
+employee number + password.
 
 ## How the numbers work
 
@@ -85,9 +85,9 @@ code + PIN.
 
 ## Notes / things to adapt before going to production
 
-- **Employee identity**: employees log in with an employee number + PIN (no email needed — common
+- **Employee identity**: employees log in with an employee number + password (no email needed — common
   for public works crews). Tax numbers are stored in employee details for payroll and payslips,
-  not used for clock-in. PINs are bcrypt-hashed; the admin can reset one from the Employees page.
+  not used for clock-in. Passwords are bcrypt-hashed; the admin can reset one from the Employees page.
 - **Geofence is a flag, not a hard block**: an out-of-range clock-in still succeeds
   (GPS is often noisy on site) but is clearly flagged on the Daily Report so a
   supervisor can follow up, rather than locking a legitimate worker out.

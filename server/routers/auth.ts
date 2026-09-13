@@ -8,9 +8,7 @@ import {
   clearEmployeeSession,
   issueAdminSession,
   issueEmployeeSessionWithPreference,
-  hashPin,
   hashPassword,
-  verifyPin,
   verifyPassword,
 } from "../auth";
 import { TRPCError } from "@trpc/server";
@@ -47,22 +45,22 @@ export const authRouter = router({
 
   // --- Employee (mobile clocking app) ---
   employeeLogin: publicProcedure
-    .input(z.object({ employerId: z.string().uuid(), employeeCode: z.string().min(1), pin: z.string().min(4).max(8), rememberMe: z.boolean().default(false) }))
+    .input(z.object({ employerId: z.string().uuid(), employeeNumber: z.string().min(1), password: z.string().min(8), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
-      const failureKey = loginKey(ctx.req.ip, `${input.employerId}:${input.employeeCode}`);
+      const failureKey = loginKey(ctx.req.ip, `${input.employerId}:${input.employeeNumber}`);
       if (isLoginBlocked(failureKey)) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many failed attempts. Try again in 15 minutes." });
       const [employee] = await db.select().from(employees)
-        .where(and(eq(employees.employerId, input.employerId), eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true)));
+        .where(and(eq(employees.employerId, input.employerId), eq(employees.employeeCode, input.employeeNumber.trim()), eq(employees.active, true)));
 
       if (!employee) {
         recordLoginFailure(failureKey);
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or password is incorrect." });
       }
 
-      const pinOk = employee.pinHash ? await verifyPin(input.pin, employee.pinHash) : false;
-      if (!pinOk) {
+      const passwordOk = employee.passwordHash ? await verifyPassword(input.password, employee.passwordHash) : false;
+      if (!passwordOk) {
         recordLoginFailure(failureKey);
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or PIN is incorrect." });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or password is incorrect." });
       }
       loginFailures.delete(failureKey);
 
@@ -81,11 +79,11 @@ export const authRouter = router({
     }),
 
   activateEmployee: publicProcedure
-    .input(z.object({ companyCode: z.string().min(1), employeeCode: z.string().min(1), activationCode: z.string().min(1), pin: z.string().regex(/^\d{4,8}$/) }))
+    .input(z.object({ companyCode: z.string().min(1), employeeNumber: z.string().min(1), activationCode: z.string().min(1), password: z.string().min(8) }))
     .mutation(async ({ input }) => {
-      const [employee] = await db.select({ employee: employees }).from(employees).innerJoin(employers, eq(employees.employerId, employers.id)).where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(employees.employeeCode, input.employeeCode.trim()), eq(employees.active, true))).then((rows) => rows.map((row) => row.employee));
+      const [employee] = await db.select({ employee: employees }).from(employees).innerJoin(employers, eq(employees.employerId, employers.id)).where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(employees.employeeCode, input.employeeNumber.trim()), eq(employees.active, true))).then((rows) => rows.map((row) => row.employee));
       if (!employee?.activationCodeHash || !employee.activationExpiresAt || employee.activationExpiresAt < new Date() || !(await verifyPassword(input.activationCode.trim().toUpperCase(), employee.activationCodeHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Activation details are invalid or expired." });
-      await db.update(employees).set({ pinHash: await hashPin(input.pin), activationCodeHash: null, activationExpiresAt: null }).where(eq(employees.id, employee.id));
+      await db.update(employees).set({ passwordHash: await hashPassword(input.password), activationCodeHash: null, activationExpiresAt: null }).where(eq(employees.id, employee.id));
       return { success: true as const };
     }),
 

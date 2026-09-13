@@ -11,7 +11,7 @@ export type EmployeeFormValues = {
   hourlyRateWeekday: string;
   hourlyRateWeekend: string;
   siteId: string;
-  pin: string;
+  password: string;
 };
 
 const emptyForm: EmployeeFormValues = {
@@ -24,7 +24,7 @@ const emptyForm: EmployeeFormValues = {
   hourlyRateWeekday: "",
   hourlyRateWeekend: "",
   siteId: "",
-  pin: "",
+  password: "",
 };
 
 export type EditingEmployee = {
@@ -75,7 +75,7 @@ export default function EmployeeFormModal({
         hourlyRateWeekday: editing.hourlyRateWeekday,
         hourlyRateWeekend: editing.hourlyRateWeekend,
         siteId: editing.siteId ?? "",
-        pin: "",
+        password: "",
       });
     } else {
       setForm(emptyForm);
@@ -169,11 +169,11 @@ export default function EmployeeFormModal({
 
         {isEditing && (
           <p className="text-xs text-slate-500">
-            Rates are locked after setup. Contact the platform administrator for rate changes. To change this employee's PIN, use "Reset PIN" from the employee list instead.
+            Rates are locked after setup. Contact the platform administrator for rate changes. To change this employee's password, use "Reset password" from the employee list instead.
           </p>
         )}
 
-        {!isEditing && <p className="text-xs text-slate-500">The employee number and one-time activation code will be shown after saving. The employee will use them to create their own PIN.</p>}
+        {!isEditing && <p className="text-xs text-slate-500">The employee number and one-time activation code will be shown after saving. The employee will use them to create their own password.</p>}
         {error && <p className="text-red-600 text-sm">{error}</p>}
         {activationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Employee number</p><p className="font-mono text-lg tracking-widest mt-1">{assignedEmployeeCode}</p><p className="font-semibold mt-3">Employee activation code</p><p className="font-mono text-lg tracking-widest mt-1">{activationCode}</p><p className="text-xs mt-1">Give both details to the employee. They use them to activate their account. The activation code expires in 48 hours and can be used once.</p></div>}
 
