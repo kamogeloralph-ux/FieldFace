@@ -83,10 +83,6 @@ if (process.env.NODE_ENV === "production") {
   app.get("/sw.js", (_req, res) => { res.setHeader("Cache-Control", "no-store"); res.sendFile(path.join(distPath, "sw.js")); });
   app.use(express.static(distPath));
 
-  // The platform-owner console is available at both /admin.html and /admin.
-  app.get("/admin", (_req, res) => { void sendHtml("admin.html", res); });
-  app.get("/admin/*", (_req, res) => { void sendHtml("admin.html", res); });
-
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api")) return next();
     void sendHtml("index.html", res);

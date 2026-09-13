@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
   },
 });
 const trpcClient = makeTrpcClient();
-const ownerConsoleBase = window.location.pathname.startsWith("/admin.html") ? "/admin.html" : "/admin";
+const ownerConsoleBase = "/admin.html";
 
 ReactDOM.createRoot(document.getElementById("admin-root")!).render(
   <React.StrictMode>

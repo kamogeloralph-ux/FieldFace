@@ -116,7 +116,7 @@ export const authRouter = router({
     };
   }),
 
-  // --- Admin / supervisor (admin.html) ---
+  // --- Company management (index.html -> /company/login) ---
   adminLogin: publicProcedure
     .input(z.object({ employerId: z.string().uuid(), username: z.string().min(1), password: z.string().min(8), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
