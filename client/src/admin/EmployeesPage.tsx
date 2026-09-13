@@ -39,7 +39,7 @@ export default function EmployeesPage() {
                 </span>
               </p>
               <p className="text-xs text-slate-500">
-                Weekday {"R" + emp.hourlyRateWeekday}/hr · Weekend {"R" + emp.hourlyRateWeekend}/hr
+                {emp.position === "general_worker" ? "General worker" : emp.position === "team_leader" ? "Team leader" : "Supervisor"} · Weekday {"R" + emp.hourlyRateWeekday}/hr · Weekend {"R" + emp.hourlyRateWeekend}/hr
                 {!emp.active && <span className="ml-2 text-red-500 font-medium">Inactive</span>}
               </p>
             </button>

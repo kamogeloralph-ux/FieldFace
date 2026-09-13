@@ -13,6 +13,7 @@ export interface PayslipPdfInput {
   employerPhone?: string | null;
   employeeName: string;
   employeeCode: string;
+  employeePosition: string;
   employeeIdNumber?: string | null;
   employeeTaxNumber?: string | null;
   employeeAddress?: string | null;
@@ -61,6 +62,7 @@ export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
     doc.fontSize(11);
     doc.text(`Employee: ${input.employeeName}`);
     doc.text(`Employee number: ${input.employeeCode}`);
+    doc.text(`Position: ${input.employeePosition}`);
     if (input.employeeIdNumber) doc.text(`ID number: ${input.employeeIdNumber}`);
     if (input.employeeTaxNumber) doc.text(`Tax number: ${input.employeeTaxNumber}`);
     if (input.employeeAddress) doc.text(`Address: ${input.employeeAddress}`);

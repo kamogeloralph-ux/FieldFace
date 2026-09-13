@@ -3,6 +3,7 @@ import { trpc } from "../lib/trpc";
 
 export type EmployeeFormValues = {
   employeeCode: string;
+  position: "general_worker" | "supervisor" | "team_leader";
   fullName: string;
   taxNumber: string;
   physicalAddress: string;
@@ -16,6 +17,7 @@ export type EmployeeFormValues = {
 
 const emptyForm: EmployeeFormValues = {
   employeeCode: "",
+  position: "general_worker",
   fullName: "",
   taxNumber: "",
   physicalAddress: "",
@@ -30,6 +32,7 @@ const emptyForm: EmployeeFormValues = {
 export type EditingEmployee = {
   id: string;
   employeeCode: string;
+  position: "general_worker" | "supervisor" | "team_leader";
   fullName: string;
   taxNumber: string | null;
   physicalAddress: string | null;
@@ -67,6 +70,7 @@ export default function EmployeeFormModal({
     if (editing) {
       setForm({
         employeeCode: editing.employeeCode,
+        position: editing.position,
         fullName: editing.fullName,
         taxNumber: editing.taxNumber ?? "",
         physicalAddress: editing.physicalAddress ?? "",
@@ -94,6 +98,7 @@ export default function EmployeeFormModal({
       if (isEditing && editing) {
         await updateEmployee.mutateAsync({
           id: editing.id,
+          position: form.position,
           fullName: form.fullName.trim(),
           taxNumber: form.taxNumber || undefined,
           physicalAddress: form.physicalAddress || undefined,
@@ -104,6 +109,7 @@ export default function EmployeeFormModal({
       } else {
         const created = await createEmployee.mutateAsync({
           fullName: form.fullName.trim(),
+          position: form.position,
           taxNumber: form.taxNumber,
           physicalAddress: form.physicalAddress || undefined,
           phone: form.phone || undefined,
@@ -141,6 +147,14 @@ export default function EmployeeFormModal({
           </label>
           {isEditing ? <p className="input-field font-semibold bg-slate-50">{editing?.employeeCode}</p> : <p className="text-sm text-slate-500">Assigned automatically when the employee is saved.</p>}
         </div>
+
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Position
+          <select className="input-field mt-1 normal-case tracking-normal font-normal" value={form.position} onChange={(e) => setForm((f) => ({ ...f, position: e.target.value as EmployeeFormValues["position"] }))} required>
+            <option value="general_worker">General worker</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="team_leader">Team leader</option>
+          </select>
+        </label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input className="input-field" placeholder="Full name" value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} required />

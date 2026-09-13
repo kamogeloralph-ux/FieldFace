@@ -41,6 +41,7 @@ create table if not exists public.employees (
   employer_id uuid not null references public.employers(id) on delete cascade,
   site_id uuid references public.sites(id) on delete set null,
   employee_code text not null,
+  position text not null default 'general_worker',
   full_name text not null,
   id_number text,
   phone text,

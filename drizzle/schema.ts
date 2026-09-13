@@ -96,6 +96,7 @@ export const employees = pgTable("employees", {
   employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),
   siteId: uuid("site_id").references(() => sites.id, { onDelete: "set null" }),
   employeeCode: text("employee_code").notNull(), // short id/badge number employee types in to log in
+  position: text("position", { enum: ["general_worker", "supervisor", "team_leader"] }).notNull().default("general_worker"),
   fullName: text("full_name").notNull(),
   idNumber: text("id_number"),
   taxNumber: text("tax_number"),

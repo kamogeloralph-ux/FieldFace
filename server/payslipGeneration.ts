@@ -5,6 +5,8 @@ import { computeCompanyDeductions, computePayroll, computeUifDeduction } from ".
 import { generatePayslipPdf } from "./pdf/payslip";
 import { uploadPayslipPdf } from "./storage";
 
+const positionLabels = { general_worker: "General worker", supervisor: "Supervisor", team_leader: "Team leader" } as const;
+
 export async function generatePayslipForEmployee(
   employerId: string,
   employer: typeof employers.$inferSelect,
@@ -38,6 +40,7 @@ export async function generatePayslipForEmployee(
     employerPhone: employer.contactPhone,
     employeeName: employee.fullName,
     employeeCode: employee.employeeCode,
+    employeePosition: positionLabels[employee.position as keyof typeof positionLabels] ?? "General worker",
     employeeIdNumber: employee.idNumber,
     employeeTaxNumber: employee.taxNumber,
     employeeAddress: employee.physicalAddress,

@@ -9,6 +9,7 @@ import { writeAudit } from "../audit";
 import { randomBytes } from "node:crypto";
 
 const employeeBase = {
+  position: z.enum(["general_worker", "supervisor", "team_leader"]).default("general_worker"),
   fullName: z.string().min(1),
   taxNumber: z.string().min(1),
   physicalAddress: z.string().optional(),
@@ -60,6 +61,7 @@ export const employeesRouter = router({
           employerId: ctx.admin.employerId,
           siteId: input.siteId ?? null,
           employeeCode,
+          position: input.position,
           fullName: input.fullName,
         taxNumber: input.taxNumber,
           physicalAddress: input.physicalAddress,
@@ -80,6 +82,7 @@ export const employeesRouter = router({
     .input(
       z.object({
         id: z.string().uuid(),
+        position: z.enum(["general_worker", "supervisor", "team_leader"]).optional(),
         fullName: z.string().min(1).optional(),
         taxNumber: z.string().optional(),
         physicalAddress: z.string().optional(),
