@@ -45,19 +45,21 @@ export const authRouter = router({
 
   // --- Employee (mobile clocking app) ---
   employeeLogin: publicProcedure
-    .input(z.object({ employerId: z.string().uuid(), employeeNumber: z.string().min(1), password: z.string().min(8), rememberMe: z.boolean().default(false) }))
+    .input(z.object({ employerId: z.string().uuid(), employeeNumber: z.string().min(1).optional(), password: z.string().min(8).optional(), employeeCode: z.string().min(1).optional(), pin: z.string().min(1).optional(), rememberMe: z.boolean().default(false) }).refine((input) => Boolean(input.employeeNumber ?? input.employeeCode) && Boolean(input.password ?? input.pin), { message: "Employee number and password are required." }))
     .mutation(async ({ ctx, input }) => {
-      const failureKey = loginKey(ctx.req.ip, `${input.employerId}:${input.employeeNumber}`);
+      const employeeNumber = (input.employeeNumber ?? input.employeeCode!).trim();
+      const password = input.password ?? input.pin!;
+      const failureKey = loginKey(ctx.req.ip, `${input.employerId}:${employeeNumber}`);
       if (isLoginBlocked(failureKey)) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many failed attempts. Try again in 15 minutes." });
       const [employee] = await db.select().from(employees)
-        .where(and(eq(employees.employerId, input.employerId), eq(employees.employeeCode, input.employeeNumber.trim()), eq(employees.active, true)));
+        .where(and(eq(employees.employerId, input.employerId), eq(employees.employeeCode, employeeNumber.toUpperCase()), eq(employees.active, true)));
 
       if (!employee) {
         recordLoginFailure(failureKey);
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or password is incorrect." });
       }
 
-      const passwordOk = employee.passwordHash ? await verifyPassword(input.password, employee.passwordHash) : false;
+      const passwordOk = employee.passwordHash ? await verifyPassword(password, employee.passwordHash) : false;
       if (!passwordOk) {
         recordLoginFailure(failureKey);
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee number or password is incorrect." });
