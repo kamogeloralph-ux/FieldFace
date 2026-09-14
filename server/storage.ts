@@ -132,6 +132,14 @@ export async function signedScheduleUrl(path: string, contentType?: string, expi
   return signedUrl(bucket, path, expiresInSeconds, contentType);
 }
 
+export async function getScheduleObject(path: string) {
+  const bucket = await objectExists("schedules", path) ? "schedules" : "site-photos";
+  const response = await r2.send(new GetObjectCommand({ Bucket: BUCKETS[bucket], Key: path }));
+  if (!response.Body) throw new Error("Schedule file is unavailable.");
+  const body = Buffer.from(await response.Body.transformToByteArray());
+  return { body, contentType: response.ContentType ?? "application/octet-stream" };
+}
+
 export async function removeSchedule(path: string) {
   await deleteObject("schedules", path);
 }

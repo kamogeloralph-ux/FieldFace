@@ -8,8 +8,8 @@ import { createContext } from "./trpc";
 import { startPayslipCron } from "./cron";
 import { db, ensureProductionSchema } from "./db";
 import { dailyReportShares, employees, employers, payslips, sites, timeEntries } from "../drizzle/schema";
-import { signedUrl } from "./storage";
-import { verifyDailyReportShareToken } from "./auth";
+import { getScheduleObject, signedUrl } from "./storage";
+import { readEmployeeSession, verifyDailyReportShareToken } from "./auth";
 import { localDayBounds } from "./timezone";
 
 const app = express();
@@ -63,6 +63,24 @@ app.get("/share/payslip/:id", async (req, res) => {
     return res.redirect(302, await signedUrl("payslips", payslip.pdfPath, 300));
   } catch {
     return res.status(404).send("Payslip is unavailable.");
+  }
+});
+
+app.get("/api/employee/schedule", async (req, res) => {
+  const employee = readEmployeeSession(req);
+  if (!employee) return res.status(401).send("Please log in as an employee.");
+  try {
+    const [employer] = await db.select({ schedulePath: employers.schedulePath, scheduleContentType: employers.scheduleContentType })
+      .from(employers)
+      .where(eq(employers.id, employee.employerId));
+    if (!employer?.schedulePath) return res.status(404).send("Schedule not found.");
+    const file = await getScheduleObject(employer.schedulePath);
+    res.setHeader("Content-Type", employer.scheduleContentType ?? file.contentType);
+    res.setHeader("Content-Disposition", "inline");
+    res.setHeader("Cache-Control", "private, no-store");
+    return res.send(file.body);
+  } catch {
+    return res.status(404).send("Schedule is unavailable.");
   }
 });
 

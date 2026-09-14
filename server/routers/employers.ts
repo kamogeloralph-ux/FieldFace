@@ -24,7 +24,7 @@ export const employersRouter = router({
   getSchedule: employeeProcedure.query(async ({ ctx }) => {
     const [employer] = await db.select({ schedulePath: employers.schedulePath, scheduleName: employers.scheduleName, scheduleContentType: employers.scheduleContentType, scheduleUpdatedAt: employers.scheduleUpdatedAt }).from(employers).where(eq(employers.id, ctx.employee.employerId));
     if (!employer?.schedulePath) return null;
-    return { name: employer.scheduleName ?? "Company schedule", contentType: employer.scheduleContentType, updatedAt: employer.scheduleUpdatedAt, url: await signedScheduleUrl(employer.schedulePath, employer.scheduleContentType ?? undefined) };
+    return { name: employer.scheduleName ?? "Company schedule", contentType: employer.scheduleContentType, updatedAt: employer.scheduleUpdatedAt, url: "/api/employee/schedule" };
   }),
 
   getScheduleAdmin: adminProcedure.query(async ({ ctx }) => {
