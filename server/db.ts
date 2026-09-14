@@ -45,6 +45,7 @@ export async function ensureProductionSchema() {
     `create index if not exists sick_notes_employer_status_idx on public.sick_notes(employer_id, status, created_at)`,
     `alter table public.employees add column if not exists tax_number text`,
     `alter table public.employees add column if not exists position text not null default 'general_worker'`,
+    `alter table public.employees add column if not exists password_hash text`,
     `alter table public.employees alter column password_hash drop not null`,
     `alter table public.employees add column if not exists activation_code_hash text`,
     `alter table public.employees add column if not exists activation_expires_at timestamptz`,
