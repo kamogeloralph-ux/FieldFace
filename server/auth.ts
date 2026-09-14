@@ -43,6 +43,20 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
+export function issueDailyReportShareToken(employerId: string, date: string): string {
+  return jwt.sign({ type: "daily-report", employerId, date }, SESSION_SECRET!, { expiresIn: "7d" });
+}
+
+export function verifyDailyReportShareToken(token: string): { employerId: string; date: string } | null {
+  try {
+    const payload = jwt.verify(token, SESSION_SECRET!) as { type?: string; employerId?: string; date?: string };
+    if (payload.type !== "daily-report" || !payload.employerId || !payload.date || !/^\d{4}-\d{2}-\d{2}$/.test(payload.date)) return null;
+    return { employerId: payload.employerId, date: payload.date };
+  } catch {
+    return null;
+  }
+}
+
 export function issueEmployeeSession(res: Response, session: EmployeeSession) {
   issueEmployeeSessionWithPreference(res, session, false);
 }

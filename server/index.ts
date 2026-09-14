@@ -1,15 +1,16 @@
 import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
-import { sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "./routers";
 import { createContext } from "./trpc";
 import { startPayslipCron } from "./cron";
 import { db, ensureProductionSchema } from "./db";
-import { payslips } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { employees, employers, payslips, sites, timeEntries } from "../drizzle/schema";
 import { signedUrl } from "./storage";
+import { verifyDailyReportShareToken } from "./auth";
+import { localDayBounds } from "./timezone";
 
 const app = express();
 app.disable("x-powered-by");
@@ -62,6 +63,47 @@ app.get("/share/payslip/:id", async (req, res) => {
     return res.redirect(302, await signedUrl("payslips", payslip.pdfPath, 300));
   } catch {
     return res.status(404).send("Payslip is unavailable.");
+  }
+});
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character] ?? character));
+}
+
+app.get("/share/daily-report/:token", async (req, res) => {
+  const share = verifyDailyReportShareToken(req.params.token);
+  if (!share) return res.status(404).send("This daily report link is invalid or has expired.");
+  try {
+    const [employer] = await db.select({ name: employers.name, timezone: employers.timezone }).from(employers).where(eq(employers.id, share.employerId));
+    if (!employer) return res.status(404).send("Daily report not found.");
+    const { start, end } = localDayBounds(share.date, employer.timezone ?? "Africa/Johannesburg");
+    const [employeeRows, siteRows, entryRows] = await Promise.all([
+      db.select({ id: employees.id, fullName: employees.fullName, active: employees.active }).from(employees).where(eq(employees.employerId, share.employerId)),
+      db.select({ id: sites.id, name: sites.name }).from(sites).where(eq(sites.employerId, share.employerId)),
+      db.select().from(timeEntries).where(and(gte(timeEntries.occurredAt, start), lte(timeEntries.occurredAt, end))),
+    ]);
+    const employeeById = new Map(employeeRows.map((employee) => [employee.id, employee]));
+    const siteById = new Map(siteRows.map((site) => [site.id, site.name]));
+    const entries = await Promise.all(entryRows.filter((entry) => employeeById.has(entry.employeeId)).map(async (entry) => ({
+      employeeName: employeeById.get(entry.employeeId)?.fullName ?? "Unknown",
+      siteName: entry.siteId ? siteById.get(entry.siteId) ?? "Unknown site" : "No site",
+      entryType: entry.entryType === "clock_in" ? "Clocked in" : "Clocked out",
+      occurredAt: new Date(entry.occurredAt).toISOString(),
+      withinGeofence: entry.withinGeofence,
+      distanceMeters: Math.round(entry.distanceMeters),
+      selfieUrl: await signedUrl("selfies", entry.selfieUrl, 3600),
+    })));
+    entries.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+    const clockedIn = new Set<string>();
+    for (const entry of [...entryRows].reverse()) {
+      if (!employeeById.has(entry.employeeId)) continue;
+      if (entry.entryType === "clock_in") clockedIn.add(entry.employeeId);
+      else clockedIn.delete(entry.employeeId);
+    }
+    const rows = entries.map((entry) => `<tr><td>${escapeHtml(entry.employeeName)}</td><td>${escapeHtml(entry.siteName)}</td><td>${entry.entryType}</td><td>${escapeHtml(new Date(entry.occurredAt).toLocaleString())}</td><td>${entry.withinGeofence ? "Within area" : `Outside area (~${entry.distanceMeters}m)`}</td><td><img src="${entry.selfieUrl}" alt="Selfie" /></td></tr>`).join("");
+    res.type("html").send(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Daily Report - ${escapeHtml(employer.name)}</title><style>body{font-family:Arial,sans-serif;color:#172033;max-width:1100px;margin:32px auto;padding:0 20px}h1{margin-bottom:4px}p{color:#64748b}.summary{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.card{border:1px solid #dbe3ea;border-radius:10px;padding:14px 18px;min-width:140px}.label{font-size:12px;color:#64748b}.value{font-size:24px;font-weight:700;margin-top:4px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #dbe3ea;padding:9px;text-align:left}th{background:#f1f5f9}img{width:48px;height:48px;object-fit:cover;border-radius:6px}@media print{body{margin:0}.summary{break-inside:avoid}}</style></head><body><h1>${escapeHtml(employer.name)} — Daily Report</h1><p>${escapeHtml(share.date)}</p><div class="summary"><div class="card"><div class="label">Active employees</div><div class="value">${employeeRows.filter((employee) => employee.active).length}</div></div><div class="card"><div class="label">Currently clocked in</div><div class="value">${clockedIn.size}</div></div><div class="card"><div class="label">Outside designated area</div><div class="value">${entries.filter((entry) => !entry.withinGeofence).length}</div></div></div><table><thead><tr><th>Employee</th><th>Site</th><th>Action</th><th>Time</th><th>Geofence</th><th>Selfie</th></tr></thead><tbody>${rows || "<tr><td colspan=6>No activity recorded for this day.</td></tr>"}</tbody></table></body></html>`);
+  } catch {
+    return res.status(404).send("Daily report is unavailable.");
   }
 });
 

@@ -3,10 +3,22 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../db";
 import { employees, employers, shifts, sites, timeEntries } from "../../drizzle/schema";
 import { adminProcedure, router } from "../trpc";
+import { issueDailyReportShareToken } from "../auth";
 import { signedUrl } from "../storage";
 import { localDayBounds } from "../timezone";
+import { TRPCError } from "@trpc/server";
 
 export const reportsRouter = router({
+  shareDailyReport: adminProcedure
+    .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+    .mutation(({ ctx, input }) => {
+      const protocol = String(ctx.req.headers["x-forwarded-proto"] ?? ctx.req.protocol).split(",")[0];
+      const host = ctx.req.headers["x-forwarded-host"] ?? ctx.req.headers.host;
+      if (!host) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to create a report link." });
+      const token = issueDailyReportShareToken(ctx.admin.employerId, input.date);
+      return { url: `${protocol}://${host}/share/daily-report/${token}` };
+    }),
+
   // Today's (or a chosen day's) clock activity across the whole employer,
   // with selfie thumbnails — this is the supervisor's daily report.
   dailyReport: adminProcedure

@@ -17,6 +17,8 @@ export default function DailyReportPage() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
   const report = trpc.reports.dailyReport.useQuery({ date });
+  const shareReport = trpc.reports.shareDailyReport.useMutation();
+  const [shareError, setShareError] = useState<string | null>(null);
 
   const employeeCards = useMemo(() => {
     const groups = new Map<string, { employeeId: string; employeeName: string; entries: ReportEntry[] }>();
@@ -37,11 +39,24 @@ export default function DailyReportPage() {
     });
   }
 
+  async function shareDailyReport() {
+    setShareError(null);
+    try {
+      const result = await shareReport.mutateAsync({ date });
+      const shareApi = navigator as Navigator & { share?: (data: { title?: string; text?: string; url?: string }) => Promise<void> };
+      if (shareApi.share) await shareApi.share({ title: "FieldFace daily report", text: `Daily report for ${date}`, url: result.url });
+      else await navigator.clipboard.writeText(result.url);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareError(error instanceof Error ? error.message : "Could not share the daily report.");
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
-        <h1 className="text-xl font-bold text-slate-800">Daily Report</h1>
-        <input type="date" className="input-field w-auto" value={date} onChange={(e) => { setDate(e.target.value); setExpandedEmployees(new Set()); }} />
+        <div><h1 className="text-xl font-bold text-slate-800">Daily Report</h1>{shareError && <p className="text-xs text-red-600 mt-1">{shareError}</p>}</div>
+        <div className="flex items-center gap-2"><input type="date" className="input-field w-auto" value={date} onChange={(e) => { setDate(e.target.value); setExpandedEmployees(new Set()); }} /><button type="button" className="btn-secondary w-auto px-3 py-2 text-sm" onClick={() => void shareDailyReport()} disabled={shareReport.isPending}>{shareReport.isPending ? "Creating..." : "Share"}</button></div>
       </div>
 
       {report.data && (
