@@ -61,12 +61,14 @@ export default function EmployeeFormModal({
   const [error, setError] = useState<string | null>(null);
   const [activationCode, setActivationCode] = useState<string | null>(null);
   const [assignedEmployeeCode, setAssignedEmployeeCode] = useState<string | null>(null);
+  const [activationCompanyCode, setActivationCompanyCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setError(null);
     setActivationCode(null);
     setAssignedEmployeeCode(null);
+    setActivationCompanyCode(null);
     if (editing) {
       setForm({
         employeeCode: editing.employeeCode,
@@ -120,6 +122,7 @@ export default function EmployeeFormModal({
         });
         setAssignedEmployeeCode(created.employeeCode);
         setActivationCode(created.activationCode);
+        setActivationCompanyCode(created.companyCode);
         return;
       }
       onClose();
@@ -189,7 +192,7 @@ export default function EmployeeFormModal({
 
         {!isEditing && <p className="text-xs text-slate-500">The employee number and one-time activation code will be shown after saving. The employee will use them to create their own password.</p>}
         {error && <p className="text-red-600 text-sm">{error}</p>}
-        {activationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Employee number</p><p className="font-mono text-lg tracking-widest mt-1">{assignedEmployeeCode}</p><p className="font-semibold mt-3">Employee activation code</p><p className="font-mono text-lg tracking-widest mt-1">{activationCode}</p><p className="text-xs mt-1">Give both details to the employee. They use them to activate their account. The activation code expires in 48 hours and can be used once.</p></div>}
+        {activationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Company code</p><p className="font-mono text-lg tracking-widest mt-1">{activationCompanyCode}</p><p className="font-semibold mt-3">Employee number</p><p className="font-mono text-lg tracking-widest mt-1">{assignedEmployeeCode}</p><p className="font-semibold mt-3">Employee activation code</p><p className="font-mono text-lg tracking-widest mt-1">{activationCode}</p><p className="text-xs mt-1">Give all three details to the employee. They use them to activate their account. The activation code expires in 48 hours and can be used once.</p></div>}
 
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4">
           <div className="max-w-xl mx-auto flex gap-3">

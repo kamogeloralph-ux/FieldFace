@@ -50,6 +50,8 @@ export const employeesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const [employer] = await db.select({ companyCode: employers.companyCode }).from(employers).where(eq(employers.id, ctx.admin.employerId));
+      if (!employer?.companyCode) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "This company does not have a company code yet." });
       const activationCode = randomBytes(5).toString("hex").toUpperCase();
       const activationCodeHash = await hashPassword(activationCode);
       const [created] = await db.transaction(async (tx) => {
@@ -75,7 +77,7 @@ export const employeesRouter = router({
         })
         .returning();
       });
-      return { ...sanitize(created), activationCode };
+      return { ...sanitize(created), activationCode, companyCode: employer.companyCode };
     }),
 
   update: adminProcedure

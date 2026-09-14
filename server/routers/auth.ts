@@ -81,7 +81,7 @@ export const authRouter = router({
   activateEmployee: publicProcedure
     .input(z.object({ companyCode: z.string().min(1), employeeNumber: z.string().min(1), activationCode: z.string().min(1), password: z.string().min(8) }))
     .mutation(async ({ input }) => {
-      const [employee] = await db.select({ employee: employees }).from(employees).innerJoin(employers, eq(employees.employerId, employers.id)).where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(employees.employeeCode, input.employeeNumber.trim()), eq(employees.active, true))).then((rows) => rows.map((row) => row.employee));
+      const [employee] = await db.select({ employee: employees }).from(employees).innerJoin(employers, eq(employees.employerId, employers.id)).where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(employees.employeeCode, input.employeeNumber.trim().toUpperCase()), eq(employees.active, true))).then((rows) => rows.map((row) => row.employee));
       if (!employee?.activationCodeHash || !employee.activationExpiresAt || employee.activationExpiresAt < new Date() || !(await verifyPassword(input.activationCode.trim().toUpperCase(), employee.activationCodeHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Activation details are invalid or expired." });
       await db.update(employees).set({ passwordHash: await hashPassword(input.password), activationCodeHash: null, activationExpiresAt: null }).where(eq(employees.id, employee.id));
       return { success: true as const };
