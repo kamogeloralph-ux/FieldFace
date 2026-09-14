@@ -37,6 +37,15 @@ export const employers = pgTable("employers", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const dailyReportShares = pgTable("daily_report_shares", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  token: text("token").notNull().unique(),
+  employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),
+  reportDate: date("report_date").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const companyDeductions = pgTable("company_deductions", {
   id: uuid("id").primaryKey().defaultRandom(),
   employerId: uuid("employer_id").references(() => employers.id, { onDelete: "cascade" }).notNull(),

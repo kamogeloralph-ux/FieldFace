@@ -7,7 +7,7 @@ import { appRouter } from "./routers";
 import { createContext } from "./trpc";
 import { startPayslipCron } from "./cron";
 import { db, ensureProductionSchema } from "./db";
-import { employees, employers, payslips, sites, timeEntries } from "../drizzle/schema";
+import { dailyReportShares, employees, employers, payslips, sites, timeEntries } from "../drizzle/schema";
 import { signedUrl } from "./storage";
 import { verifyDailyReportShareToken } from "./auth";
 import { localDayBounds } from "./timezone";
@@ -71,7 +71,13 @@ function escapeHtml(value: string) {
 }
 
 app.get("/share/daily-report/:token", async (req, res) => {
-  const share = verifyDailyReportShareToken(req.params.token);
+  const [shortShare] = await db.select({ employerId: dailyReportShares.employerId, date: dailyReportShares.reportDate, expiresAt: dailyReportShares.expiresAt })
+    .from(dailyReportShares)
+    .where(eq(dailyReportShares.token, req.params.token))
+    .limit(1);
+  const share = shortShare && shortShare.expiresAt > new Date()
+    ? { employerId: shortShare.employerId, date: shortShare.date }
+    : verifyDailyReportShareToken(req.params.token);
   if (!share) return res.status(404).send("This daily report link is invalid or has expired.");
   try {
     const [employer] = await db.select({ name: employers.name, timezone: employers.timezone }).from(employers).where(eq(employers.id, share.employerId));

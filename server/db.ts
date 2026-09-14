@@ -72,6 +72,8 @@ export async function ensureProductionSchema() {
     `alter table public.platform_admins add column if not exists support_whatsapp text`,
     `alter table public.platform_admins add column if not exists support_phone text`,
     `alter table public.platform_admins add column if not exists support_email text`,
+    `create table if not exists public.daily_report_shares (id uuid primary key default gen_random_uuid(), token text not null unique, employer_id uuid not null references public.employers(id) on delete cascade, report_date date not null, expires_at timestamptz not null, created_at timestamptz not null default now())`,
+    `create index if not exists daily_report_shares_token_idx on public.daily_report_shares(token)`,
     `create table if not exists public.audit_logs (id uuid primary key default gen_random_uuid(), actor_type text not null, actor_id uuid, employer_id uuid references public.employers(id) on delete set null, action text not null, entity_type text not null, entity_id uuid, metadata text, created_at timestamptz not null default now())`,
   ];
   for (const statement of statements) await db.execute(sql.raw(statement));

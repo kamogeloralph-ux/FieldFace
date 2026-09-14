@@ -1,9 +1,9 @@
 import { z } from "zod";
+import { randomBytes } from "node:crypto";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../db";
-import { employees, employers, shifts, sites, timeEntries } from "../../drizzle/schema";
+import { dailyReportShares, employees, employers, shifts, sites, timeEntries } from "../../drizzle/schema";
 import { adminProcedure, router } from "../trpc";
-import { issueDailyReportShareToken } from "../auth";
 import { signedUrl } from "../storage";
 import { localDayBounds } from "../timezone";
 import { TRPCError } from "@trpc/server";
@@ -11,11 +11,13 @@ import { TRPCError } from "@trpc/server";
 export const reportsRouter = router({
   shareDailyReport: adminProcedure
     .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const protocol = String(ctx.req.headers["x-forwarded-proto"] ?? ctx.req.protocol).split(",")[0];
       const host = ctx.req.headers["x-forwarded-host"] ?? ctx.req.headers.host;
       if (!host) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to create a report link." });
-      const token = issueDailyReportShareToken(ctx.admin.employerId, input.date);
+      const token = randomBytes(10).toString("base64url");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await db.insert(dailyReportShares).values({ token, employerId: ctx.admin.employerId, reportDate: input.date, expiresAt });
       return { url: `${protocol}://${host}/share/daily-report/${token}` };
     }),
 
