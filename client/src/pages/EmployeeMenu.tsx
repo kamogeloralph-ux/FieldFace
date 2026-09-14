@@ -26,7 +26,7 @@ export default function EmployeeMenu() {
         <button className="employee-close-button" onClick={close} aria-label="Close navigation">×</button>
       </div>
       <nav className="space-y-1">
-        {LINKS.map(([to, label]) => <Link key={to} to={to} onClick={close} className={`block rounded-lg px-3 py-2 text-sm font-medium transition ${location.pathname === to ? "bg-emerald-700 text-white" : "text-emerald-100 hover:bg-emerald-800"}`}>{label}</Link>)}
+        {LINKS.map(([to, label]) => label === "Home" ? <button key={to} type="button" onClick={() => { close(); window.location.assign("/clock"); }} className={`w-full text-left block rounded-lg px-3 py-2 text-sm font-medium transition ${location.pathname === to ? "bg-emerald-700 text-white" : "text-emerald-100 hover:bg-emerald-800"}`}>Home</button> : <Link key={to} to={to} onClick={close} className={`block rounded-lg px-3 py-2 text-sm font-medium transition ${location.pathname === to ? "bg-emerald-700 text-white" : "text-emerald-100 hover:bg-emerald-800"}`}>{label}</Link>)}
       </nav>
     </aside>
   </>;

@@ -33,7 +33,7 @@ export default function AdminLayout() {
           <p className="text-xs text-emerald-300">{me.data?.employer?.name}</p>
         </div>
         <nav className="flex-1 space-y-1">
-          {NAV.map((item) => (
+          {NAV.map((item) => item.label === "Home" ? <button key={item.to} type="button" onClick={() => window.location.assign("/company")} className="w-full text-left block rounded-lg px-3 py-2 text-sm font-medium transition text-emerald-100 hover:bg-emerald-800">Home</button> : (
             <NavLink
               key={item.to}
               to={item.to}
