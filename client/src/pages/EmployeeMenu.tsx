@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 
 const LINKS = [
   ["/clock", "Home"],
-  ["/schedule", "Schedule"],
+  ["/schedule", "Open schedule"],
   ["/history", "History"],
   ["/payslips", "Payslips"],
   ["/leave", "Leave"],
