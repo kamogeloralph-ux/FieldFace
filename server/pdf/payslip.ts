@@ -18,7 +18,7 @@ export interface PayslipPdfInput {
   employeeTaxNumber?: string | null;
   employeeAddress?: string | null;
   periodYear: number;
-  periodMonth: number; // 1-12
+  periodMonth: number;
   weekdayHours: number;
   weekendHours: number;
   totalHours: number;
@@ -40,114 +40,106 @@ export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    const money = (n: number) => `${currency} ${n.toFixed(2)}`;
+    const money = (amount: number) => `${currency} ${amount.toFixed(2)}`;
+    const pageLeft = 50;
+    const pageRight = 545;
+    const pageWidth = pageRight - pageLeft;
+    const border = "#555555";
+    const lightBorder = "#9a9a9a";
+    const small = 7.5;
+    const normal = 8;
+    const heading = 8.5;
 
-    // --- Company header -----------------------------------------------
-    doc.fontSize(20).text(input.employerName, { align: "left" });
-    doc.moveDown(0.2);
-    doc.fontSize(12).fillColor("#555").text("Payslip", { align: "left" });
-    doc.fillColor("#000");
-    doc.fontSize(9).fillColor("#555");
-    const companyLines = [
-      input.employerRegNumber ? `Reg no: ${input.employerRegNumber}` : null,
-      input.employerTaxNumber ? `Tax no: ${input.employerTaxNumber}` : null,
-      input.employerAddress ?? null,
-      input.employerPhone ? `Tel: ${input.employerPhone}` : null,
-    ].filter(Boolean) as string[];
-    for (const line of companyLines) doc.text(line);
-    doc.fillColor("#000");
-    doc.moveDown(1);
+    function cell(text: string, x: number, y: number, width: number, height: number, options: { bold?: boolean; align?: "left" | "center" | "right" } = {}) {
+      doc.font(options.bold ? "Helvetica-Bold" : "Helvetica").fontSize(normal).fillColor("#111111");
+      doc.text(text, x + 4, y + 3, { width: width - 8, height: height - 6, align: options.align ?? "left", ellipsis: true });
+    }
 
-    // --- Employee details ------------------------------------------------
-    doc.fontSize(11);
-    doc.text(`Employee: ${input.employeeName}`);
-    doc.text(`Employee number: ${input.employeeCode}`);
-    doc.text(`Position: ${input.employeePosition}`);
-    if (input.employeeIdNumber) doc.text(`ID number: ${input.employeeIdNumber}`);
-    if (input.employeeTaxNumber) doc.text(`Tax number: ${input.employeeTaxNumber}`);
-    if (input.employeeAddress) doc.text(`Address: ${input.employeeAddress}`);
-    doc.text(`Pay period: ${MONTH_NAMES[input.periodMonth - 1]} ${input.periodYear}`);
-    doc.moveDown(1);
+    function tableRow(values: string[], widths: number[], y: number, height: number, options: { bold?: boolean; fill?: string; align?: ("left" | "center" | "right")[] } = {}) {
+      let x = pageLeft;
+      values.forEach((value, index) => {
+        const width = widths[index];
+        if (options.fill) doc.rect(x, y, width, height).fillAndStroke(options.fill, border);
+        else doc.rect(x, y, width, height).stroke(border);
+        cell(value, x, y, width, height, { bold: options.bold, align: options.align?.[index] });
+        x += width;
+      });
+      return y + height;
+    }
 
-    // --- Earnings table ------------------------------------------------
-    const tableTop = doc.y;
-    const col1 = 50, col2 = 260, col3 = 380, col4 = 490;
-    doc.font("Helvetica-Bold");
-    doc.text("Description", col1, tableTop);
-    doc.text("Hours", col2, tableTop);
-    doc.text("Rate", col3, tableTop);
-    doc.text("Amount", col4, tableTop);
-    doc.font("Helvetica");
-    doc.moveDown(0.5);
-    doc.moveTo(col1, doc.y).lineTo(545, doc.y).strokeColor("#ccc").stroke();
-    doc.moveDown(0.5);
+    function sectionTitle(title: string, y: number) {
+      doc.rect(pageLeft, y, pageWidth, 18).fillAndStroke("#f3f4f4", border);
+      cell(title, pageLeft, y, pageWidth, 18, { bold: true });
+      return y + 18;
+    }
+
+    // Compact payslip header, following the supplied reference layout.
+    doc.font("Helvetica-Bold").fontSize(11).fillColor("#111111").text(`${input.employerName} - Monthly Wages`, pageLeft, 52, { width: pageWidth, align: "center" });
+    doc.font("Helvetica").fontSize(8).text(`${MONTH_NAMES[input.periodMonth - 1]} ${input.periodYear}`, pageLeft, 66, { width: pageWidth, align: "right" });
+
+    let y = 84;
+    y = tableRow([input.employeeName, `Pay period: ${MONTH_NAMES[input.periodMonth - 1]} ${input.periodYear}`], [pageWidth * 0.58, pageWidth * 0.42], y, 20);
+    y = tableRow([`Employee number: ${input.employeeCode}`, `Position: ${input.employeePosition}`], [pageWidth * 0.58, pageWidth * 0.42], y, 20);
+    y += 18;
+
+    y = sectionTitle("Employee details", y);
+    const detailsLeft = [
+      `Employee: ${input.employeeName}`,
+      `Employee number: ${input.employeeCode}`,
+      input.employeeIdNumber ? `ID number: ${input.employeeIdNumber}` : "ID number: Not provided",
+      input.employeeTaxNumber ? `Tax number: ${input.employeeTaxNumber}` : "Tax number: Not provided",
+    ];
+    const detailsRight = [
+      `Position: ${input.employeePosition}`,
+      `Hourly rate: ${money(input.hourlyRateWeekday)}/hr`,
+      input.employeeAddress ? `Address: ${input.employeeAddress}` : "Address: Not provided",
+      input.employerName ? `Company: ${input.employerName}` : "",
+    ];
+    for (let index = 0; index < detailsLeft.length; index += 1) {
+      y = tableRow([detailsLeft[index], detailsRight[index]], [pageWidth * 0.58, pageWidth * 0.42], y, 17);
+    }
+    y += 12;
+
+    const earningsWidth = [pageWidth * 0.30, pageWidth * 0.16, pageWidth * 0.20, pageWidth * 0.34];
+    const deductionsWidth = [pageWidth * 0.30, pageWidth * 0.16, pageWidth * 0.20, pageWidth * 0.34];
+    y = sectionTitle("Income and deductions", y);
+    y = tableRow(["INCOME", "HOURS", "VALUE", "DEDUCTIONS / VALUE"], earningsWidth, y, 20, { bold: true, fill: "#f8f8f8", align: ["left", "center", "right", "left"] });
 
     const weekdayAmount = input.weekdayHours * input.hourlyRateWeekday;
     const weekendAmount = input.weekendHours * input.hourlyRateWeekend;
-
-    let rowY = doc.y;
-    doc.text("Weekday hours", col1, rowY);
-    doc.text(input.weekdayHours.toFixed(2), col2, rowY);
-    doc.text(money(input.hourlyRateWeekday) + "/hr", col3, rowY);
-    doc.text(money(weekdayAmount), col4, rowY);
-    doc.moveDown(0.8);
-
-    rowY = doc.y;
-    doc.text("Weekend hours", col1, rowY);
-    doc.text(input.weekendHours.toFixed(2), col2, rowY);
-    doc.text(money(input.hourlyRateWeekend) + "/hr", col3, rowY);
-    doc.text(money(weekendAmount), col4, rowY);
-    doc.moveDown(1);
-
-    doc.moveTo(col1, doc.y).lineTo(545, doc.y).strokeColor("#ccc").stroke();
-    doc.moveDown(0.5);
-
-    doc.font("Helvetica-Bold");
-    rowY = doc.y;
-    doc.text("Total hours worked", col1, rowY);
-    doc.text(input.totalHours.toFixed(2), col2, rowY);
-    doc.moveDown(0.8);
-
-    rowY = doc.y;
-    doc.text("Gross pay", col1, rowY);
-    doc.text(money(input.grossPay), col4, rowY);
-    doc.font("Helvetica").fontSize(11);
-    doc.moveDown(1.2);
-
-    // --- Deductions ------------------------------------------------------
-    doc.font("Helvetica-Bold").text("Deductions", col1, doc.y);
-    doc.font("Helvetica");
-    doc.moveDown(0.5);
-    doc.moveTo(col1, doc.y).lineTo(545, doc.y).strokeColor("#ccc").stroke();
-    doc.moveDown(0.5);
-
-    rowY = doc.y;
-    doc.text("UIF", col1, rowY);
-    doc.text(input.uifDeduction > 0 ? `-${money(input.uifDeduction)}` : money(0), col4, rowY);
-    doc.moveDown(1);
-
-    for (const deduction of input.companyDeductions) {
-      rowY = doc.y;
-      doc.text(deduction.name, col1, rowY);
-      doc.text(deduction.amount > 0 ? `-${money(deduction.amount)}` : money(0), col4, rowY);
-      doc.moveDown(1);
+    const deductionRows: Array<[string, number]> = [
+      ["UIF", input.uifDeduction],
+      ...input.companyDeductions.map((deduction) => [deduction.name, deduction.amount] as [string, number]),
+    ];
+    const incomeRows: Array<[string, number, number]> = [
+      ["Weekday hours", input.weekdayHours, weekdayAmount],
+      ["Weekend hours", input.weekendHours, weekendAmount],
+    ];
+    const rows = Math.max(incomeRows.length, deductionRows.length);
+    for (let index = 0; index < rows; index += 1) {
+      const income = incomeRows[index];
+      const deduction = deductionRows[index];
+      y = tableRow([
+        income?.[0] ?? "",
+        income ? income[1].toFixed(2) : "",
+        income ? money(income[2]) : "",
+        deduction ? `${deduction[0]}  ${money(deduction[1])}` : "",
+      ], earningsWidth, y, 19, { align: ["left", "right", "right", "left"] });
     }
+    y = tableRow(["Total hours", input.totalHours.toFixed(2), "Gross pay", money(input.grossPay)], earningsWidth, y, 20, { bold: true, align: ["left", "right", "left", "right"] });
+    const totalDeductions = input.uifDeduction + input.companyDeductions.reduce((sum, deduction) => sum + deduction.amount, 0);
+    y = tableRow(["", "", "Total deductions", money(totalDeductions)], earningsWidth, y, 20, { bold: true, align: ["left", "right", "left", "right"] });
+    y += 10;
 
-    doc.moveTo(col1, doc.y).lineTo(545, doc.y).strokeColor("#000").stroke();
-    doc.moveDown(0.5);
+    y = tableRow(["NET PAY", "", "", money(input.netPay)], earningsWidth, y, 24, { bold: true, fill: "#f3f4f4", align: ["left", "right", "right", "right"] });
+    y += 16;
 
-    doc.font("Helvetica-Bold").fontSize(13);
-    rowY = doc.y;
-    doc.text("Net pay", col1, rowY);
-    doc.text(money(input.netPay), col4, rowY);
-    doc.font("Helvetica").fontSize(11);
+    y = sectionTitle("Hours and rates", y);
+    y = tableRow(["Weekday hours", input.weekdayHours.toFixed(2), "Rate", `${money(input.hourlyRateWeekday)}/hr`], earningsWidth, y, 19, { align: ["left", "right", "left", "right"] });
+    y = tableRow(["Weekend hours", input.weekendHours.toFixed(2), "Rate", `${money(input.hourlyRateWeekend)}/hr`], earningsWidth, y, 19, { align: ["left", "right", "left", "right"] });
 
-    doc.moveDown(3);
-    doc.fontSize(9).fillColor("#777").text(
-      `Generated automatically on ${new Date().toISOString().slice(0, 10)}. Hours are calculated from GPS+selfie verified clock-in/out records.`,
-      { width: 495 },
-    );
-
+    doc.font("Helvetica").fontSize(small).fillColor("#555555");
+    doc.text("This payslip contains attendance, rate, earnings, deduction, and employee information stored in FieldFace.", pageLeft, Math.min(y + 24, 760), { width: pageWidth, align: "center" });
     doc.end();
   });
 }

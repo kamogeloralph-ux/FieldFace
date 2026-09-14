@@ -4,7 +4,6 @@ import { db } from "../db";
 import { payslips } from "../../drizzle/schema";
 import { adminProcedure, employeeProcedure, ownerProcedure, router } from "../trpc";
 import { generatePayslipsForEmployer } from "../payslipGeneration";
-import { signedUrl } from "../storage";
 import { TRPCError } from "@trpc/server";
 import { writeAudit } from "../audit";
 
@@ -44,7 +43,10 @@ export const payslipsRouter = router({
       .from(payslips)
       .where(and(eq(payslips.id, input.payslipId), eq(payslips.employeeId, ctx.employee.employeeId)));
     if (!payslip) return null;
-    return { url: await signedUrl("payslips", payslip.pdfPath, 3600) };
+    const protocol = String(ctx.req.headers["x-forwarded-proto"] ?? ctx.req.protocol).split(",")[0];
+    const host = ctx.req.headers["x-forwarded-host"] ?? ctx.req.headers.host;
+    if (!host) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Unable to create a payslip link." });
+    return { url: `${protocol}://${host}/share/payslip/${payslip.id}` };
   }),
 
 });
