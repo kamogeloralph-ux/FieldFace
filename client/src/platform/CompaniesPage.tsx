@@ -116,14 +116,27 @@ export default function CompaniesPage() {
 
       <div className="space-y-2">
         {companies.data?.map((c) => (
-          <div key={c.id} className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="font-semibold text-slate-800">{c.name}</p><div className="flex items-center gap-2 mt-1"><p className="text-xs font-semibold text-emerald-700">Company code: {c.companyCode ?? "Pending"}</p>{c.companyCode && <button type="button" className="btn-secondary w-auto px-2 py-1 text-xs" onClick={() => void copyValue(`company-${c.id}`, c.companyCode!)}>{copied === `company-${c.id}` ? "Copied" : "Copy"}</button>}</div><p className="text-xs text-slate-500">{c.employeeCount} employee{c.employeeCount === 1 ? "" : "s"} · {c.siteCount} site{c.siteCount === 1 ? "" : "s"}{c.contactEmail ? ` · ${c.contactEmail}` : ""}</p></div>
+          <div
+            key={c.id}
+            className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between cursor-pointer transition hover:border-emerald-300 hover:shadow-md active:scale-[0.995]"
+            role="button"
+            tabIndex={0}
+            aria-label={`Open management for ${c.name}`}
+            onClick={() => handleManage(c.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleManage(c.id);
+              }
+            }}
+          >
+            <div><p className="font-semibold text-slate-800">{c.name}</p><div className="flex items-center gap-2 mt-1"><p className="text-xs font-semibold text-emerald-700">Company code: {c.companyCode ?? "Pending"}</p>{c.companyCode && <button type="button" className="btn-secondary w-auto px-2 py-1 text-xs" onClick={(e) => { e.stopPropagation(); void copyValue(`company-${c.id}`, c.companyCode!); }}>{copied === `company-${c.id}` ? "Copied" : "Copy"}</button>}</div><p className="text-xs text-slate-500">{c.employeeCount} employee{c.employeeCount === 1 ? "" : "s"} · {c.siteCount} site{c.siteCount === 1 ? "" : "s"}{c.contactEmail ? ` · ${c.contactEmail}` : ""}</p></div>
             <div className="flex flex-wrap gap-3">
-              <button className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => setSelected(c)}>Edit employee rates</button>
-              <button type="button" className="btn-secondary w-auto px-4 py-2 text-sm" onClick={() => void handleManage(c.id)} disabled={busyId === c.id || impersonate.isPending} aria-busy={busyId === c.id}>
+              <button className="btn-secondary w-auto px-4 py-2 text-sm" onClick={(e) => { e.stopPropagation(); setSelected(c); }}>Edit employee rates</button>
+              <button type="button" className="btn-secondary w-auto px-4 py-2 text-sm" onClick={(e) => { e.stopPropagation(); void handleManage(c.id); }} disabled={busyId === c.id || impersonate.isPending} aria-busy={busyId === c.id}>
                 {busyId === c.id ? "Opening..." : "Manage this company"}
               </button>
-              <button className="text-sm text-red-600 underline px-1" onClick={async () => { if (confirm(`Delete "${c.name}"? This permanently removes its sites, employees, time records and payslips.`)) await deleteCompany.mutateAsync({ id: c.id }); }} disabled={busyId === c.id}>Delete</button>
+              <button className="text-sm text-red-600 underline px-1" onClick={async (e) => { e.stopPropagation(); if (confirm(`Delete "${c.name}"? This permanently removes its sites, employees, time records and payslips.`)) await deleteCompany.mutateAsync({ id: c.id }); }} disabled={busyId === c.id}>Delete</button>
             </div>
           </div>
         ))}
