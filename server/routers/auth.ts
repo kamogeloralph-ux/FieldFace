@@ -119,7 +119,7 @@ export const authRouter = router({
     .input(z.object({ employerId: z.string().uuid(), username: z.string().min(1), password: z.string().min(8), rememberMe: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
       const [result] = await db.select({ profile: adminUsers }).from(adminUsers)
-        .where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.trim().toLowerCase())));
+        .where(and(eq(adminUsers.employerId, input.employerId), eq(adminUsers.username, input.username.trim().toUpperCase())));
       if (!result) throw new TRPCError({ code: "UNAUTHORIZED", message: "Username or password is incorrect for the selected company." });
       if (!result.profile.passwordHash) {
         if (result.profile.activationCodeHash && result.profile.activationExpiresAt && result.profile.activationExpiresAt > new Date()) {
