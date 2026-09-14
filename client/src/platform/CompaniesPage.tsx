@@ -38,6 +38,7 @@ export default function CompaniesPage() {
   const [managerActivationCode, setManagerActivationCode] = useState<string | null>(null);
   const [managerCompanyCode, setManagerCompanyCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [managerFormOpen, setManagerFormOpen] = useState(false);
   const employees = trpc.platform.listCompanyEmployees.useQuery(
     { employerId: selected?.id ?? "00000000-0000-0000-0000-000000000000" },
     { enabled: !!selected },
@@ -103,8 +104,21 @@ export default function CompaniesPage() {
         <button className="btn-primary sm:w-auto px-4" type="submit" disabled={createCompany.isPending}>{createCompany.isPending ? "Adding..." : "+ Add company"}</button>
       </form>
 
-      <form onSubmit={handleCreateManager} className="card max-w-2xl space-y-3 mb-5">
-        <div><p className="font-semibold text-slate-800">Add management user</p><p className="text-xs text-slate-500 mt-1">The username is generated automatically from the company name. Complete personal information is required.</p></div>
+      <section className="card max-w-2xl mb-5">
+        <button
+          type="button"
+          className="w-full flex items-center justify-between gap-3 text-left"
+          onClick={() => setManagerFormOpen((open) => !open)}
+          aria-expanded={managerFormOpen}
+        >
+          <span>
+            <span className="block font-semibold text-slate-800">Add management user</span>
+            <span className="block text-xs text-slate-500 mt-1">Tap to {managerFormOpen ? "hide" : "open"} the management user form.</span>
+          </span>
+          <span className="text-2xl leading-none text-emerald-700" aria-hidden="true">{managerFormOpen ? "−" : "+"}</span>
+        </button>
+        {managerFormOpen && <form onSubmit={handleCreateManager} className="space-y-3 mt-4">
+        <p className="text-xs text-slate-500">The username is generated automatically from the company name. Complete personal information is required.</p>
         <select className="input-field" value={managerCompanyId} onChange={(e) => setManagerCompanyId(e.target.value)} required><option value="">Select company</option>{companies.data?.map((c) => <option key={c.id} value={c.id}>{c.name} · {c.companyCode ?? "code pending"}</option>)}</select>
         <label className="block text-sm font-medium text-slate-700">Position<select className="input-field mt-1" value={managerRole} onChange={(e) => setManagerRole(e.target.value as typeof managerRole)} required><option value="owner">Company owner</option><option value="supervisor">Site supervisor</option><option value="team_leader">Team leader</option></select></label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><input className="input-field" placeholder="Full name" value={managerName} onChange={(e) => setManagerName(e.target.value)} required /><input className="input-field" type="email" placeholder="Email address" value={managerEmail} onChange={(e) => setManagerEmail(e.target.value)} required /><input className="input-field" placeholder="ID number" value={managerIdNumber} onChange={(e) => setManagerIdNumber(e.target.value)} required /><input className="input-field" placeholder="Phone number" value={managerPhone} onChange={(e) => setManagerPhone(e.target.value)} required /></div>
@@ -112,7 +126,8 @@ export default function CompaniesPage() {
         {createManager.error && <p className="text-sm text-red-600">{createManager.error.message}</p>}
         {managerActivationCode && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-semibold">Manager activation details</p><p className="mt-1">Company code: <strong>{managerCompanyCode}</strong></p><p className="mt-1">Username: <strong>{managerUsername}</strong></p><div className="flex items-center gap-2 mt-1"><p className="font-mono text-lg tracking-widest">{managerActivationCode}</p><button type="button" className="btn-secondary w-auto px-2 py-1 text-xs" onClick={() => void copyValue("manager-code", managerActivationCode)}>{copied === "manager-code" ? "Copied" : "Copy"}</button></div><p className="text-xs mt-1">Give the username, activation code, and company code to the manager. They activate at <strong>/company/activate</strong>. It expires in 48 hours and can be used once.</p></div>}
         <button className="btn-secondary sm:w-auto px-4" type="submit" disabled={createManager.isPending}>{createManager.isPending ? "Creating..." : "Create management login"}</button>
-      </form>
+        </form>}
+      </section>
 
       <div className="space-y-2">
         {companies.data?.map((c) => (
