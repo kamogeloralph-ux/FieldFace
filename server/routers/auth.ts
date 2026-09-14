@@ -90,7 +90,7 @@ export const authRouter = router({
   activateManager: publicProcedure
     .input(z.object({ companyCode: z.string().min(1), username: z.string().min(1), activationCode: z.string().min(1), password: z.string().min(8) }))
     .mutation(async ({ input }) => {
-      const [result] = await db.select({ profile: adminUsers }).from(adminUsers).innerJoin(employers, eq(adminUsers.employerId, employers.id)).where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(adminUsers.username, input.username.trim().toLowerCase())));
+      const [result] = await db.select({ profile: adminUsers }).from(adminUsers).innerJoin(employers, eq(adminUsers.employerId, employers.id)).where(and(eq(employers.companyCode, input.companyCode.trim().toUpperCase()), eq(adminUsers.username, input.username.trim().toUpperCase())));
       const profile = result?.profile;
       if (!profile?.activationCodeHash || !profile.activationExpiresAt || profile.activationExpiresAt < new Date() || !(await verifyPassword(input.activationCode.trim().toUpperCase(), profile.activationCodeHash))) throw new TRPCError({ code: "UNAUTHORIZED", message: "Activation details are invalid or expired." });
       await db.update(adminUsers).set({ passwordHash: await hashPassword(input.password), activationCodeHash: null, activationExpiresAt: null }).where(eq(adminUsers.id, profile.id));

@@ -101,7 +101,7 @@ export const platformRouter = router({
   createManager: platformProcedure
     .input(z.object({ employerId: z.string().uuid(), fullName: z.string().trim().min(1), email: z.string().trim().email(), idNumber: z.string().trim().min(1), phone: z.string().trim().min(1), physicalAddress: z.string().trim().min(1), role: z.enum(["owner", "supervisor", "team_leader"]).default("supervisor") }))
     .mutation(async ({ input }) => {
-      const [employer] = await db.select({ id: employers.id, name: employers.name }).from(employers).where(eq(employers.id, input.employerId));
+      const [employer] = await db.select({ id: employers.id, name: employers.name, companyCode: employers.companyCode }).from(employers).where(eq(employers.id, input.employerId));
       if (!employer) throw new TRPCError({ code: "NOT_FOUND", message: "Company not found." });
       const activationCode = randomBytes(5).toString("hex").toUpperCase();
       const activationCodeHash = await hashPassword(activationCode);
@@ -110,7 +110,7 @@ export const platformRouter = router({
         const username = await nextManagerUsername(input.employerId, employer.name);
         return tx.insert(adminUsers).values({ id: randomUUID(), employerId: input.employerId, fullName: input.fullName, email: input.email, idNumber: input.idNumber, phone: input.phone, physicalAddress: input.physicalAddress, username, passwordHash: null, activationCodeHash, activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), role: input.role }).returning({ id: adminUsers.id, fullName: adminUsers.fullName, email: adminUsers.email, idNumber: adminUsers.idNumber, phone: adminUsers.phone, physicalAddress: adminUsers.physicalAddress, username: adminUsers.username, role: adminUsers.role });
       });
-      return { ...created, activationCode };
+      return { ...created, activationCode, companyCode: employer.companyCode };
     }),
 
   updateCompany: platformProcedure
