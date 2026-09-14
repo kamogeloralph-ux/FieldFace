@@ -40,7 +40,7 @@ function isLoginBlocked(key: string) {
 
 export const authRouter = router({
   listLoginCompanies: publicProcedure.query(async () => {
-    return db.select({ id: employers.id, name: employers.name }).from(employers).orderBy(employers.name);
+    return db.select({ id: employers.id, name: employers.name, companyCode: employers.companyCode }).from(employers).orderBy(employers.name);
   }),
 
   // --- Employee (mobile clocking app) ---
