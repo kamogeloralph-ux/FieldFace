@@ -7,7 +7,7 @@ export default function EmployeeSchedulePage() {
   const isPdf = schedule.data?.contentType === "application/pdf";
 
   return (
-    <div className="app-wallpaper min-h-screen px-5 py-6">
+    <div className="app-wallpaper employee-wallpaper min-h-screen px-5 py-6">
       <div className="max-w-sm mx-auto space-y-4">
         <header className="relative flex items-center justify-between">
           <EmployeeMenu />

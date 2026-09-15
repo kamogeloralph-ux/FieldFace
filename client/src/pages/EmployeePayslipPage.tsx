@@ -47,7 +47,7 @@ export default function EmployeePayslipPage() {
   if (payslips.isLoading) return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
 
   return (
-    <div className="app-wallpaper min-h-screen px-5 py-6">
+    <div className="app-wallpaper employee-wallpaper min-h-screen px-5 py-6">
       <div className="max-w-sm mx-auto">
         <header className="relative flex items-center justify-between mb-5"><EmployeeMenu /><h1 className="absolute inset-x-0 text-center text-xl font-bold text-slate-800 pointer-events-none">My payslips</h1><span /></header>
         <div className="card mb-5"><p className="font-semibold text-slate-800">Management-issued payslips</p><p className="text-sm text-slate-500 mt-1">Payslips can only be generated and shared by management. You can download payslips once they are issued.</p></div>

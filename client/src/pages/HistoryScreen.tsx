@@ -8,7 +8,7 @@ export default function HistoryScreen() {
   const weekendTotal = (shifts.data ?? []).filter((s) => s.isWeekend).reduce((sum, s) => sum + Number(s.hours), 0);
 
   return (
-    <div className="app-wallpaper min-h-screen max-w-sm mx-auto px-5 py-6">
+    <div className="app-wallpaper employee-wallpaper min-h-screen max-w-sm mx-auto px-5 py-6">
       <header className="relative flex items-center justify-between mb-5">
         <EmployeeMenu />
         <h1 className="absolute inset-x-0 text-center text-xl font-bold text-slate-800 pointer-events-none">My hours</h1>
