@@ -6,7 +6,7 @@ type BrandLogoProps = {
 export default function BrandLogo({ inverse = false, className = "" }: BrandLogoProps) {
   return (
     <img
-      src={inverse ? "/fieldface-logo-white.png" : "/fieldface-logo.png"}
+      src={inverse ? "/fieldface-logo-white.png" : "/fieldface-logo-transparent.png"}
       alt="FieldFace"
       width={971}
       height={227}
