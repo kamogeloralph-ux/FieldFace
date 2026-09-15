@@ -79,12 +79,9 @@ body {
 }
 
 .brand-lockup {
-  padding: 0.65rem 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 12px 30px rgba(15, 118, 110, 0.08);
-  backdrop-filter: blur(12px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .welcome-hero {
