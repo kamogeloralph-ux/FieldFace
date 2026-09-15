@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { trpc } from "../lib/trpc";
+import BrandLogo from "../components/BrandLogo";
 
 const FEATURES = [
   {
@@ -56,14 +57,14 @@ export default function WelcomeScreen() {
       <div className="max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
           <div className="brand-lockup">
-            <img src="/fieldface-logo.png" alt="Fieldface" className="h-8 w-auto" />
+            <BrandLogo />
           </div>
         </div>
 
         <div className="text-center mb-6 welcome-hero">
-          <p className="eyebrow mb-3">FIELD OPERATIONS, SIMPLIFIED</p>
-          <h1 className="text-3xl font-bold text-slate-900">Built for the field.</h1>
-          <p className="text-slate-600 mt-2">Clock in with a selfie at the site, and let the hours, reports and payslips take care of themselves.</p>
+          <p className="eyebrow eyebrow-light mb-3">FIELD OPERATIONS, SIMPLIFIED</p>
+          <h1 className="text-3xl font-bold text-white">Built for the field.</h1>
+          <p className="text-emerald-100/75 mt-2">Clock in with a selfie at the site, and let the hours, reports and payslips take care of themselves.</p>
         </div>
 
         <div className="space-y-3 mb-8">
@@ -82,9 +83,9 @@ export default function WelcomeScreen() {
           </div>}
         </section>
 
-        <p className="text-center text-xs font-semibold tracking-wide text-slate-400 mb-4">HOW A SHIFT IS RECORDED</p>
+        <p className="text-center text-xs font-semibold tracking-wide text-emerald-200 mb-4">HOW A SHIFT IS RECORDED</p>
         <div className="grid grid-cols-2 gap-3">{FEATURES.map((f) => <div key={f.title} className="card"><div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3">{f.icon}</div><p className="font-semibold text-slate-800 text-sm mb-1">{f.title}</p><p className="text-xs text-slate-500 leading-snug">{f.body}</p></div>)}</div>
-        <p className="text-center text-xs text-slate-500 mt-6"><Link to="/policy" className="underline">Read the FieldFace client policy</Link></p>
+        <p className="text-center text-xs text-emerald-100/70 mt-6"><Link to="/policy" className="underline">Read the FieldFace client policy</Link></p>
       </div>
     </div>
   );
