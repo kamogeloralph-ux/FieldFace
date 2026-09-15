@@ -8,6 +8,11 @@ export default function BrandLogo({ inverse = false, className = "" }: BrandLogo
     <img
       src={inverse ? "/fieldface-logo-white.png" : "/fieldface-logo.png"}
       alt="FieldFace"
+      width={971}
+      height={227}
+      loading="eager"
+      decoding="sync"
+      fetchPriority="high"
       className={`block h-8 w-auto object-contain ${className}`}
     />
   );
