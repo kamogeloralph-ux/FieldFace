@@ -36,9 +36,9 @@ export default function AccountActivationPage({ manager = false }: { manager?: b
       <div className="login-panel max-w-sm mx-auto w-full">
         <div className="text-center mb-8">
           <BrandLogo className="mx-auto mb-5" />
-          <p className="eyebrow mb-3">FIRST-TIME ACCOUNT SETUP</p>
-          <h1 className="text-2xl font-bold text-emerald-900">Activate your account</h1>
-          <p className="text-slate-600 mt-1">Use the one-time code provided by your administrator to create your password.</p>
+          <p className="eyebrow eyebrow-light mb-3">FIRST-TIME ACCOUNT SETUP</p>
+          <h1 className="text-2xl font-bold text-white">Activate your account</h1>
+          <p className="text-emerald-100/75 mt-1">Use the one-time code provided by your administrator to create your password.</p>
         </div>
         <form className="login-form-card space-y-4" onSubmit={submit}>
           <label className="block text-sm font-medium text-slate-700">

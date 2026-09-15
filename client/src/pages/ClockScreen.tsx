@@ -140,7 +140,7 @@ export default function ClockScreen() {
   }
 
   if (me.isLoading || status.isLoading) {
-    return <div className="app-wallpaper min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
+    return <div className="app-wallpaper min-h-screen flex items-center justify-center text-emerald-100">Loading...</div>;
   }
 
   const nextAction = status.data?.nextAction ?? "clock_in";
@@ -151,12 +151,12 @@ export default function ClockScreen() {
       <header className="relative flex items-center justify-between mb-5">
         <EmployeeMenu />
         <div className="absolute inset-x-0 mx-auto max-w-[58%] text-center pointer-events-none">
-          <p className="text-xs text-slate-500">Logged in as</p>
-          <p className="font-semibold text-slate-800 truncate" title={me.data?.fullName}>{me.data?.fullName}</p>
+          <p className="text-xs text-emerald-200">Logged in as</p>
+          <p className="font-semibold text-white truncate" title={me.data?.fullName}>{me.data?.fullName}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="text-sm text-slate-500 underline"
+            className="text-sm text-emerald-100 underline"
             onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/") })}
           >
             Log out
@@ -217,7 +217,7 @@ export default function ClockScreen() {
       )}
 
       {stage === "submitting" && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-500">
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-emerald-100">
           <p>Getting your location and submitting...</p>
         </div>
       )}

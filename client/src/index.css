@@ -26,9 +26,9 @@ body {
 
 .app-wallpaper {
   background:
-    radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.18), transparent 30%),
-    radial-gradient(circle at 92% 34%, rgba(14, 116, 144, 0.12), transparent 28%),
-    linear-gradient(145deg, #f8fafc 0%, #ecfdf5 52%, #f0fdfa 100%);
+    radial-gradient(circle at 15% 18%, rgba(52, 211, 153, 0.24), transparent 28%),
+    radial-gradient(circle at 90% 80%, rgba(45, 212, 191, 0.16), transparent 30%),
+    linear-gradient(135deg, #052e2b 0%, #064e3b 48%, #083344 100%);
 }
 
 .app-wallpaper::before,
@@ -71,7 +71,20 @@ body {
     linear-gradient(90deg, rgba(167, 243, 208, 0.14) 1px, transparent 1px);
 }
 
+.app-wallpaper::before {
+  opacity: 0.24;
+  background-image: linear-gradient(rgba(167, 243, 208, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 243, 208, 0.14) 1px, transparent 1px);
+}
+
 .admin-wallpaper::after {
+  right: -7rem;
+  top: auto;
+  bottom: -8rem;
+  background: rgba(45, 212, 191, 0.2);
+}
+
+.app-wallpaper::after {
   right: -7rem;
   top: auto;
   bottom: -8rem;
