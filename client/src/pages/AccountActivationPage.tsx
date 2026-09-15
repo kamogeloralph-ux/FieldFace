@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { trpc } from "../lib/trpc";
+import BrandLogo from "../components/BrandLogo";
 
 export default function AccountActivationPage({ manager = false }: { manager?: boolean }) {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function AccountActivationPage({ manager = false }: { manager?: b
     <div className="app-wallpaper min-h-screen flex flex-col justify-center px-6 py-10">
       <div className="login-panel max-w-sm mx-auto w-full">
         <div className="text-center mb-8">
-          <img src="/fieldface-logo.png" alt="FieldFace" className="h-8 w-auto mx-auto mb-5" />
+          <BrandLogo className="mx-auto mb-5" />
           <p className="eyebrow mb-3">FIRST-TIME ACCOUNT SETUP</p>
           <h1 className="text-2xl font-bold text-emerald-900">Activate your account</h1>
           <p className="text-slate-600 mt-1">Use the one-time code provided by your administrator to create your password.</p>

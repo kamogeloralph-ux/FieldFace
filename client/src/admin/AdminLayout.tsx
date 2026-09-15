@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { trpc } from "../lib/trpc";
+import BrandLogo from "../components/BrandLogo";
 
 const NAV = [
   { to: "/company", label: "Home", end: true },
@@ -27,7 +28,7 @@ export default function AdminLayout() {
       <aside className={`admin-sidebar ${menuOpen ? "is-open" : ""}`}>
         <div className="mb-6">
           <div className="flex items-center justify-between gap-3">
-            <p className="font-bold text-lg">FieldFace</p>
+            <BrandLogo inverse className="h-7" />
             <button className="admin-close-button" onClick={closeMenu} aria-label="Close navigation">×</button>
           </div>
           <p className="text-xs text-emerald-300">{me.data?.employer?.name}</p>
@@ -68,7 +69,7 @@ export default function AdminLayout() {
             <span />
           </button>
           <div>
-            <p className="font-bold text-emerald-900">FieldFace</p>
+            <BrandLogo className="h-7" />
             <p className="text-xs text-slate-500">{me.data?.employer?.name}</p>
           </div>
         </header>

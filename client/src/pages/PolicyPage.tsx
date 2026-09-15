@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import BrandLogo from "../components/BrandLogo";
 
 const sections = [
   ["Purpose and scope", "FieldFace records attendance, supports payroll administration, and handles information submitted by client companies and employees. It does not replace an employer’s legal duties, payroll review, employment policies, privacy notices, or record-retention obligations."],
@@ -16,7 +17,7 @@ export default function PolicyPage() {
     <div className="app-wallpaper min-h-screen px-5 py-8">
       <article className="max-w-2xl mx-auto card space-y-6">
         <header className="flex items-start justify-between gap-4 border-b border-slate-100 pb-5">
-          <div><img src="/fieldface-logo.png" alt="FieldFace" className="h-8 w-auto mb-4" /><p className="eyebrow mb-2">CLIENT POLICY</p><h1 className="text-2xl font-bold text-slate-900">FieldFace Client Policy</h1><p className="text-sm text-slate-500 mt-2">Effective date: 12 September 2026</p></div>
+          <div><BrandLogo className="mb-4" /><p className="eyebrow mb-2">CLIENT POLICY</p><h1 className="text-2xl font-bold text-slate-900">FieldFace Client Policy</h1><p className="text-sm text-slate-500 mt-2">Effective date: 12 September 2026</p></div>
           <Link to="/" className="text-sm text-slate-500 underline">Back</Link>
         </header>
         <p className="text-sm leading-6 text-slate-700">This policy explains how FieldFace records attendance, supports payroll administration, and handles information submitted by client companies and their employees.</p>

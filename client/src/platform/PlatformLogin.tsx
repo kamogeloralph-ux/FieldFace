@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { trpc } from "../lib/trpc";
+import BrandLogo from "../components/BrandLogo";
 
 export default function PlatformLogin() {
   const [email, setEmail] = useState("");
@@ -37,7 +38,7 @@ export default function PlatformLogin() {
     <div className="admin-wallpaper min-h-screen flex flex-col justify-center px-6 py-10">
       <div className="login-panel w-full max-w-sm mx-auto">
       <div className="text-center mb-8">
-        <img src="/fieldface-logo-white.png" alt="Fieldface" className="h-8 w-auto mx-auto mb-5" />
+        <BrandLogo inverse className="mx-auto mb-5" />
         <p className="eyebrow eyebrow-light mb-3">PLATFORM OWNER CONSOLE</p>
         <h1 className="text-2xl font-bold text-white">Welcome back.</h1>
         <p className="text-emerald-100/75 mt-1">Manage every company on FieldFace.</p>

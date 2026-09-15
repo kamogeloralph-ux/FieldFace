@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import BrandLogo from "../components/BrandLogo";
 
 const LINKS = [
   ["/clock", "Home"],
@@ -22,7 +23,7 @@ export default function EmployeeMenu() {
     {open && <button className="employee-drawer-backdrop" aria-label="Close navigation" onClick={close} />}
     <aside className={`employee-drawer ${open ? "is-open" : ""}`} aria-label="Employee navigation">
       <div className="mb-6 flex items-center justify-between gap-3">
-        <p className="font-bold text-lg text-emerald-50">FieldFace</p>
+        <BrandLogo inverse className="h-7" />
         <button className="employee-close-button" onClick={close} aria-label="Close navigation">×</button>
       </div>
       <nav className="space-y-1">
