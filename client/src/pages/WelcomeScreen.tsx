@@ -57,7 +57,7 @@ export default function WelcomeScreen() {
       <div className="max-w-sm mx-auto">
         <div className="flex justify-center mb-8">
           <div className="brand-lockup">
-            <BrandLogo />
+            <BrandLogo inverse />
           </div>
         </div>
 
