@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "../db";
 import { employees, employers } from "../../drizzle/schema";
 import { adminProcedure, platformProcedure, router } from "../trpc";
@@ -7,6 +7,7 @@ import { hashPassword } from "../auth";
 import { TRPCError } from "@trpc/server";
 import { writeAudit } from "../audit";
 import { randomBytes } from "node:crypto";
+import { normalizeWaNumber } from "../whatsapp";
 
 const employeeBase = {
   position: z.enum(["general_worker", "supervisor", "team_leader"]).default("general_worker"),
@@ -15,10 +16,26 @@ const employeeBase = {
   physicalAddress: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
+  whatsappNumber: z.string().optional().or(z.literal("")),
   hourlyRateWeekday: z.number().min(0),
   hourlyRateWeekend: z.number().min(0),
   siteId: z.string().uuid().optional().nullable(),
 };
+
+/** Normalizes to digits-only (matching WhatsApp's wa_id format) or undefined to clear it. */
+function cleanWhatsappNumber(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const digits = normalizeWaNumber(value);
+  return digits || undefined;
+}
+
+async function assertWhatsappNumberFree(whatsappNumber: string, excludeEmployeeId?: string) {
+  const conditions = excludeEmployeeId
+    ? and(eq(employees.whatsappNumber, whatsappNumber), ne(employees.id, excludeEmployeeId))
+    : eq(employees.whatsappNumber, whatsappNumber);
+  const [existing] = await db.select({ id: employees.id }).from(employees).where(conditions);
+  if (existing) throw new TRPCError({ code: "CONFLICT", message: "That WhatsApp number is already linked to another employee." });
+}
 
 function sanitize(e: typeof employees.$inferSelect) {
   const { passwordHash, ...rest } = e;
@@ -52,6 +69,8 @@ export const employeesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const [employer] = await db.select({ companyCode: employers.companyCode }).from(employers).where(eq(employers.id, ctx.admin.employerId));
       if (!employer?.companyCode) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "This company does not have a company code yet." });
+      const whatsappNumber = cleanWhatsappNumber(input.whatsappNumber);
+      if (whatsappNumber) await assertWhatsappNumberFree(whatsappNumber);
       const activationCode = randomBytes(5).toString("hex").toUpperCase();
       const activationCodeHash = await hashPassword(activationCode);
       const [created] = await db.transaction(async (tx) => {
@@ -69,6 +88,7 @@ export const employeesRouter = router({
           physicalAddress: input.physicalAddress,
           phone: input.phone,
           email: input.email || undefined,
+          whatsappNumber,
           passwordHash: null,
           activationCodeHash,
           activationExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
@@ -90,6 +110,7 @@ export const employeesRouter = router({
         physicalAddress: z.string().optional(),
         phone: z.string().optional(),
         email: z.string().email().optional().or(z.literal("")),
+        whatsappNumber: z.string().optional().or(z.literal("")),
         siteId: z.string().uuid().optional().nullable(),
       }),
     )
@@ -104,6 +125,11 @@ export const employeesRouter = router({
       const values: Record<string, unknown> = { ...rest };
       if (typeof values.hourlyRateWeekday === "number") values.hourlyRateWeekday = String(values.hourlyRateWeekday);
       if (typeof values.hourlyRateWeekend === "number") values.hourlyRateWeekend = String(values.hourlyRateWeekend);
+      if ("whatsappNumber" in rest) {
+        const whatsappNumber = cleanWhatsappNumber(rest.whatsappNumber);
+        if (whatsappNumber) await assertWhatsappNumberFree(whatsappNumber, id);
+        values.whatsappNumber = whatsappNumber ?? null;
+      }
 
       const [updated] = await db.update(employees).set(values).where(eq(employees.id, id)).returning();
       return sanitize(updated);

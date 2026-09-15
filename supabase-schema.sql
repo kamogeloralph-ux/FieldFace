@@ -281,3 +281,23 @@ create table if not exists public.company_deduction_employees (
   employee_id uuid not null references public.employees(id) on delete cascade,
   primary key (deduction_id, employee_id)
 );
+
+-- ---------------------------------------------------------------------------
+-- WhatsApp-based clocking. Employees are matched to their record by their
+-- personal WhatsApp number (digits-only, e.g. "27821234567" — Meta's wa_id
+-- format, no "+"). A selfie sent to the company WhatsApp number is staged
+-- here until the matching location pin arrives, then becomes a normal
+-- time_entries row (source = 'whatsapp').
+-- ---------------------------------------------------------------------------
+alter table public.employees add column if not exists whatsapp_number text;
+create unique index if not exists employees_whatsapp_number_unique on public.employees(whatsapp_number);
+alter table public.time_entries add column if not exists source text not null default 'app';
+create table if not exists public.whatsapp_pending_clocks (
+  id uuid primary key default gen_random_uuid(),
+  phone_number text not null unique,
+  employee_id uuid not null references public.employees(id) on delete cascade,
+  selfie_path text not null,
+  wa_message_id text,
+  captured_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);

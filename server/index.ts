@@ -11,6 +11,8 @@ import { dailyReportShares, employees, employers, payslips, sites, timeEntries }
 import { getScheduleObject, signedUrl } from "./storage";
 import { readEmployeeSession, verifyDailyReportShareToken } from "./auth";
 import { localDayBounds } from "./timezone";
+import { WHATSAPP_VERIFY_TOKEN, verifyWhatsappSignature } from "./whatsapp";
+import { handleIncomingWhatsappMessage } from "./whatsappClocking";
 
 const app = express();
 app.disable("x-powered-by");
@@ -23,7 +25,7 @@ app.use((_req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   next();
 });
-app.use(express.json({ limit: "12mb" })); // selfies come through as base64 in tRPC input
+app.use(express.json({ limit: "12mb", verify: (req, _res, buf) => { (req as express.Request & { rawBody?: Buffer }).rawBody = buf; } })); // selfies come through as base64 in tRPC input; rawBody is kept for WhatsApp webhook signature verification
 app.use(cookieParser());
 
 const requestWindows = new Map<string, { startedAt: number; count: number }>();
@@ -54,6 +56,49 @@ app.get("/api/health", async (_req, res) => {
   } catch {
     res.status(503).json({ ok: false, database: "unavailable" });
   }
+});
+
+// --- WhatsApp Cloud API webhook -------------------------------------------
+// Meta calls this to verify ownership of the endpoint when it's first configured.
+app.get("/webhooks/whatsapp", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+  if (mode === "subscribe" && WHATSAPP_VERIFY_TOKEN && token === WHATSAPP_VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
+  }
+  return res.sendStatus(403);
+});
+
+// Meta delivers one webhook call per batch of message events. We always
+// respond 200 quickly (even on internal errors) so Meta doesn't spam retries;
+// failures are logged server-side instead.
+app.post("/webhooks/whatsapp", (req, res) => {
+  const signature = req.header("x-hub-signature-256");
+  const rawBody = (req as express.Request & { rawBody?: Buffer }).rawBody;
+  if (!rawBody || !verifyWhatsappSignature(rawBody, signature)) {
+    console.warn("WhatsApp webhook: signature verification failed");
+    return res.sendStatus(403);
+  }
+  res.sendStatus(200);
+
+  void (async () => {
+    try {
+      const entries = req.body?.entry ?? [];
+      for (const entry of entries) {
+        for (const change of entry.changes ?? []) {
+          const messages = change.value?.messages ?? [];
+          for (const message of messages) {
+            await handleIncomingWhatsappMessage(message).catch((error) => {
+              console.error("WhatsApp message handling failed:", error);
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("WhatsApp webhook processing failed:", error);
+    }
+  })();
 });
 
 app.get("/share/payslip/:id", async (req, res) => {

@@ -84,6 +84,13 @@ async function objectExists(bucket: keyof typeof BUCKETS, path: string) {
 
 export async function uploadSelfie(employeeId: string, dataUrl: string): Promise<string> {
   const { buffer, contentType } = decodeDataUrl(dataUrl);
+  return uploadSelfieBuffer(employeeId, buffer, contentType);
+}
+
+/** Same validation/upload path as uploadSelfie, for callers that already have raw bytes
+ * (e.g. a photo downloaded from the WhatsApp Cloud API) instead of a data: URL. */
+export async function uploadSelfieBuffer(employeeId: string, buffer: Buffer, contentType: string): Promise<string> {
+  if (contentType !== "image/jpeg" && contentType !== "image/png") throw new Error("Only JPEG and PNG images are accepted.");
   validateImage(buffer);
   const ext = contentType.split("/")[1] || "jpg";
   const path = `${employeeId}/${Date.now()}.${ext}`;

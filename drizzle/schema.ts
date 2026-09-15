@@ -112,6 +112,11 @@ export const employees = pgTable("employees", {
   physicalAddress: text("physical_address"),
   phone: text("phone"),
   email: text("email"),
+  // Digits-only WhatsApp number (matches Meta's `wa_id` format, e.g. "27821234567" —
+  // no "+", no spaces). Used to identify which employee/employer a WhatsApp
+  // clock-in message belongs to. Unique across the whole platform since it's a
+  // personal device identifier, not scoped to one employer.
+  whatsappNumber: text("whatsapp_number").unique(),
   passwordHash: text("password_hash"), // bcrypt hash of the employee-selected password
   activationCodeHash: text("activation_code_hash"),
   activationExpiresAt: timestamp("activation_expires_at", { withTimezone: true }),
@@ -168,6 +173,7 @@ export const timeEntries = pgTable("time_entries", {
   siteId: uuid("site_id").references(() => sites.id, { onDelete: "set null" }),
   entryType: text("entry_type", { enum: ["clock_in", "clock_out"] }).notNull(),
   occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+  source: text("source", { enum: ["app", "whatsapp"] }).notNull().default("app"),
   selfieUrl: text("selfie_url").notNull(),
   latitude: doublePrecision("latitude").notNull(),
   longitude: doublePrecision("longitude").notNull(),
@@ -221,6 +227,20 @@ export const payslips = pgTable("payslips", {
 }, (t) => ({
   uniquePeriod: sql`UNIQUE (${t.employeeId}, ${t.periodYear}, ${t.periodMonth})`,
 }));
+
+// A WhatsApp clock-in "in progress": the selfie has arrived but we're still
+// waiting on the location pin (or vice versa isn't supported — selfie must
+// come first). One row per phone number; overwritten if they resend a selfie,
+// deleted once the pair is turned into a time_entries row.
+export const whatsappPendingClocks = pgTable("whatsapp_pending_clocks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  phoneNumber: text("phone_number").notNull().unique(), // digits-only wa_id
+  employeeId: uuid("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  selfiePath: text("selfie_path").notNull(), // already-uploaded R2 key in the "selfies" bucket
+  waMessageId: text("wa_message_id"), // the selfie message's wamid, for logging/troubleshooting
+  capturedAt: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").primaryKey().defaultRandom(),

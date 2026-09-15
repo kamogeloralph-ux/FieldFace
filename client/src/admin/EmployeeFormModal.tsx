@@ -9,6 +9,7 @@ export type EmployeeFormValues = {
   physicalAddress: string;
   phone: string;
   email: string;
+  whatsappNumber: string;
   hourlyRateWeekday: string;
   hourlyRateWeekend: string;
   siteId: string;
@@ -23,6 +24,7 @@ const emptyForm: EmployeeFormValues = {
   physicalAddress: "",
   phone: "",
   email: "",
+  whatsappNumber: "",
   hourlyRateWeekday: "",
   hourlyRateWeekend: "",
   siteId: "",
@@ -38,6 +40,7 @@ export type EditingEmployee = {
   physicalAddress: string | null;
   phone: string | null;
   email: string | null;
+  whatsappNumber: string | null;
   hourlyRateWeekday: string;
   hourlyRateWeekend: string;
   siteId: string | null;
@@ -78,6 +81,7 @@ export default function EmployeeFormModal({
         physicalAddress: editing.physicalAddress ?? "",
         phone: editing.phone ?? "",
         email: editing.email ?? "",
+        whatsappNumber: editing.whatsappNumber ?? "",
         hourlyRateWeekday: editing.hourlyRateWeekday,
         hourlyRateWeekend: editing.hourlyRateWeekend,
         siteId: editing.siteId ?? "",
@@ -106,6 +110,7 @@ export default function EmployeeFormModal({
           physicalAddress: form.physicalAddress || undefined,
           phone: form.phone || undefined,
           email: form.email || undefined,
+          whatsappNumber: form.whatsappNumber || undefined,
           siteId: form.siteId || null,
         });
       } else {
@@ -116,6 +121,7 @@ export default function EmployeeFormModal({
           physicalAddress: form.physicalAddress || undefined,
           phone: form.phone || undefined,
           email: form.email || undefined,
+          whatsappNumber: form.whatsappNumber || undefined,
           hourlyRateWeekday: Number(form.hourlyRateWeekday),
           hourlyRateWeekend: Number(form.hourlyRateWeekend),
           siteId: form.siteId || undefined,
@@ -164,6 +170,7 @@ export default function EmployeeFormModal({
           <input className="input-field" placeholder="Tax number (for employee details and payslips)" value={form.taxNumber} onChange={(e) => setForm((f) => ({ ...f, taxNumber: e.target.value }))} required />
           <input className="input-field" placeholder="Phone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
           <input className="input-field" placeholder="Email (optional)" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+          <input className="input-field" placeholder="WhatsApp number, e.g. 0821234567" value={form.whatsappNumber} onChange={(e) => setForm((f) => ({ ...f, whatsappNumber: e.target.value }))} />
           <select className="input-field" value={form.siteId} onChange={(e) => setForm((f) => ({ ...f, siteId: e.target.value }))}>
             <option value="">No site assigned yet</option>
             {sites.data?.map((s) => (
@@ -178,6 +185,7 @@ export default function EmployeeFormModal({
           value={form.physicalAddress}
           onChange={(e) => setForm((f) => ({ ...f, physicalAddress: e.target.value }))}
         />
+        <p className="text-xs text-slate-500 -mt-2">If a WhatsApp number is set, this employee can also clock in/out by sending a selfie to the company WhatsApp number.</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input className="input-field" placeholder="Weekday rate / hr" type="number" step="0.01" value={form.hourlyRateWeekday} readOnly={isEditing} onChange={(e) => setForm((f) => ({ ...f, hourlyRateWeekday: e.target.value }))} required />
